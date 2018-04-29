@@ -153,9 +153,10 @@ contract UrbitToken is BurnableToken, StandardToken {
     string public constant name = "Urbit Token"; // solium-disable-line uppercase
     string public constant symbol = "URB"; // solium-disable-line uppercase
     uint8 public constant decimals = 18; // solium-disable-line uppercase
+    uint256 public constant MAGNITUDE = 10**uint256(decimals);
 
     /// Maximum tokens to be allocated (600 million)
-    uint256 public constant HARD_CAP = 600000000 * 10**uint256(decimals);
+    uint256 public constant HARD_CAP = 600000000 * MAGNITUDE;
 
     /// This vault is used to keep the team and founders tokens
     TokenVault public urbitTeamTokensVault;
@@ -278,7 +279,7 @@ contract UrbitToken is BurnableToken, StandardToken {
     }
 
     function calcTokens(uint32 count) internal pure returns (uint256) {
-        return count * 10**uint256(decimals);
+        return count * MAGNITUDE;
     }
 
     // Can't be `onlyAdmin` because it's called from within the constructor
