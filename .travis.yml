@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - "9"
+install:
+  - npm install -g truffle
+  - npm install -g ganache-cli
+  - npm install
+script:
+  - npm run lint
+  - npm run solium
+  - npm test
+after_script:
+  - npm run coverage && cat coverage/lcov.info | coveralls
