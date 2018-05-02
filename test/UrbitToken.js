@@ -1,5 +1,6 @@
 /* eslint-env node, mocha */
 const UrbitToken = artifacts.require('../contracts/UrbitToken.sol');
+const expectThrow = require('./helpers/expectThrow.js');
 const BigNumber = require('bignumber.js');
 
 const should = require('chai') // eslint-disable-line no-unused-vars
@@ -21,9 +22,20 @@ contract('UrbitToken', (accounts) => {
   beforeEach(async () => {
   });
 
-  context('initial context', () => {
-    it('close sale, create tokens', async () => {
+  context('bad initialization', () => {
+    it('should not be allowed', async () => {
+      await expectThrow(UrbitToken.new(0, bonus, sale, referral));
+      await expectThrow(UrbitToken.new(admin, 0, sale, referral));
+      await expectThrow(UrbitToken.new(admin, bonus, 0, referral));
+      await expectThrow(UrbitToken.new(admin, bonus, sale, 0));
+    });
+  });
+  context('closing the sale', () => {
+    it('should close sale, create tokens', async () => {
       await urbitToken.closeSale({ from: admin });
+    });
+    it('should only close sale once', async () => {
+      await expectThrow(urbitToken.closeSale({ from: admin }));
     });
   });
 });

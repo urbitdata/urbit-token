@@ -24,6 +24,7 @@ contract('TokenVesting', (accounts) => {
     });
 
     it('should release token', async () => {
+      const tv = await TokenVesting.new(beneficiary, 1, 1, 1, true);
     });
 
     it('should revoke token', async () => {
