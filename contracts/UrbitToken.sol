@@ -67,7 +67,12 @@ contract UrbitToken is BurnableToken, StandardToken {
         _;
     }
 
-    function UrbitToken(address _urbitAdminAddress, address _bonusTokensAddress, address _saleTokensAddress, address _referralTokensAddress) public {
+    constructor(
+        address _urbitAdminAddress,
+        address _bonusTokensAddress,
+        address _saleTokensAddress,
+        address _referralTokensAddress) public
+    {
         require(_urbitAdminAddress != address(0));
         require(_bonusTokensAddress != address(0));
         require(_saleTokensAddress != address(0));
@@ -101,7 +106,16 @@ contract UrbitToken is BurnableToken, StandardToken {
     }
 
     /// @dev Vest tokens
-    function vestTokens(address _fromVault, uint256 _tokensAmount, address _beneficiary, uint256 _start, uint256 _cliff, uint256 _duration, bool _revocable) external onlyAdmin { // solium-disable-line arg-overflow
+    function vestTokens(
+        address _fromVault,
+        uint256 _tokensAmount,
+        address _beneficiary,
+        uint256 _start,
+        uint256 _cliff,
+        uint256 _duration,
+        bool _revocable)
+        external onlyAdmin
+    {
         TokenVesting vesting = TokenVesting(vestingOf[_beneficiary]);
         if (vesting == address(0)) {
             vesting = new TokenVesting(_beneficiary, _start, _cliff, _duration, _revocable);

@@ -14,7 +14,7 @@ contract TokenVault {
     // ERC20 token contract being held
     ERC20 public token;
 
-    function TokenVault(ERC20 _token) public {
+    constructor(ERC20 _token) public {
         token = _token;
     }
 
