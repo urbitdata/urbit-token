@@ -67,7 +67,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         _;
     }
 
-    constructor(
+    function UrbitToken(
         address _urbitAdminAddress,
         address _bonusTokensAddress,
         address _saleTokensAddress,
