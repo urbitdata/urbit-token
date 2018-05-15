@@ -1,6 +1,7 @@
 /* eslint-env node, mocha */
-const TokenVault = artifacts.require('../contracts/TokenVault.sol');
+const BasicTokenMock = artifacts.require('../contracts/mocks/BasicTokenMock.sol');
 const BigNumber = require('bignumber.js');
+const expectThrow = require('./helpers/expectThrow.js');
 
 const should = require('chai') // eslint-disable-line no-unused-vars
   .use(require('chai-as-promised'))
@@ -8,22 +9,20 @@ const should = require('chai') // eslint-disable-line no-unused-vars
   .should();
 
 contract('TokenVault', (accounts) => {
-//  const account0 = accounts[0];
-//  const account1 = accounts[1];
+  const account1 = accounts[1];
+  const account2 = accounts[2];
 
-  before(async () => {
-  });
+  context('vault', () => {
+    it('should fail to create an empty vault', async () => {
+      const tvMock = await BasicTokenMock.new(account1, 10000);
+      await tvMock.createTokenVault(0);
+      await expectThrow(tvMock.fillUpAllowance());
+    });
 
-  beforeEach(async () => {
-  });
-
-  context('initial context', () => {
-    it('create vault', async () => {
-      // create some token...
-      //
-      //
-      // const tv = await TokenVault.new(token);
-      // await tv.fillUpAllowance();
+    it('should create a regular vault', async () => {
+      const tvMock = await BasicTokenMock.new(account2, 10000);
+      await tvMock.createTokenVault(1000);
+      await tvMock.fillUpAllowance();
     });
   });
 });
