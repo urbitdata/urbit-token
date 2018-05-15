@@ -30,8 +30,24 @@ contract('UrbitToken', (accounts) => {
       await expectThrow(UrbitToken.new(admin, bonus, sale, 0));
     });
   });
+
+  context('before sale closed', () => {
+    it('should allow bonus to transfer', async () => {
+      await urbitToken.transfer(admin, 10101, { from: bonus });
+    });
+    it('should allow sale transfer', async () => {
+      await urbitToken.transfer(admin, 10101, { from: sale });
+    });
+    it('should allow referral to transfer', async () => {
+      await urbitToken.transfer(admin, 10101, { from: referral });
+    });
+    it('should not allow transfer to null', async () => {
+      await expectThrow(urbitToken.transfer(0, 10101, { from: bonus }));
+    });
+  });
+
   context('closing the sale', () => {
-    it('non-admin should not close sale', async () => {
+    it('should not allow non-admin to close sale', async () => {
       await expectThrow(urbitToken.closeSale({ from: bonus }));
     });
     it('should close sale, create tokens', async () => {
