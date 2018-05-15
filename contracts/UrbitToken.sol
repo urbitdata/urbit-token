@@ -135,7 +135,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         return TokenVesting(vestingOf[_owner]).vestedAmount(this);
     }
 
-    /// @dev get the TokenTimelock contract address for an owner
+    /// @dev get the TokenVesting contract address for an owner
     function vestingOf(address _owner) public view returns (address) {
         return vestingOf[_owner];
     }
@@ -174,7 +174,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         createTokens(count, tokenVault);
         tokenVault.fillUpAllowance();
         return tokenVault;
-    } 
+    }
 
     function createVestableTokens() internal onlyAdmin {
         /// Team tokens - 30M URB
