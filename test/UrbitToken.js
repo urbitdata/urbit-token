@@ -9,6 +9,7 @@ const should = require('chai') // eslint-disable-line no-unused-vars
   .should();
 
 contract('UrbitToken', (accounts) => {
+  const creator = accounts[0];
   const admin = accounts[1];
   const bonus = accounts[2];
   const sale = accounts[3];
@@ -33,16 +34,23 @@ contract('UrbitToken', (accounts) => {
 
   context('before sale closed', () => {
     it('should allow bonus to transfer', async () => {
-      await urbitToken.transfer(admin, 10101, { from: bonus });
+      const result = await urbitToken.transfer(admin, 10101, { from: bonus });
+      result.logs[0].event.should.be.eq('Transfer');
     });
     it('should allow sale transfer', async () => {
-      await urbitToken.transfer(admin, 10101, { from: sale });
+      const result = await urbitToken.transfer(admin, 10101, { from: sale });
+      result.logs[0].event.should.be.eq('Transfer');
     });
     it('should allow referral to transfer', async () => {
-      await urbitToken.transfer(admin, 10101, { from: referral });
+      const result = await urbitToken.transfer(admin, 10101, { from: referral });
+      result.logs[0].event.should.be.eq('Transfer');
     });
     it('should not allow transfer to null', async () => {
       await expectThrow(urbitToken.transfer(0, 10101, { from: bonus }));
+    });
+    it('should not allow transfer by other', async () => {
+      const result = await urbitToken.transfer(admin, 10101, { from: creator });
+      result.logs.length.should.eq(0);
     });
   });
 
