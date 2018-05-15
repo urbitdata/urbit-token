@@ -31,6 +31,9 @@ contract('UrbitToken', (accounts) => {
     });
   });
   context('closing the sale', () => {
+    it('non-admin should not close sale', async () => {
+      await expectThrow(urbitToken.closeSale({ from: bonus }));
+    });
     it('should close sale, create tokens', async () => {
       await urbitToken.closeSale({ from: admin });
     });
