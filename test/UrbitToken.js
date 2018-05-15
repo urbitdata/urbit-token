@@ -53,6 +53,12 @@ contract('UrbitToken', (accounts) => {
       const result = await urbitToken.transfer(admin, 10101, { from: creator });
       result.logs.length.should.eq(0);
     });
+
+    it('should not allow transferFrom', async () => {
+      await urbitToken.approve(sale, 10101, { from: bonus });
+      const result = await urbitToken.transferFrom(bonus, sale, 10101, { from: sale });
+      result.logs.length.should.eq(0);
+    });
   });
 
   context('closing the sale', () => {
@@ -66,6 +72,13 @@ contract('UrbitToken', (accounts) => {
 
     it('should only close sale once', async () => {
       await expectThrow(urbitToken.closeSale({ from: admin }));
+    });
+  });
+
+  context('after the sale is closed', () => {
+    it('should allow transferFrom', async () => {
+      const result = await urbitToken.transferFrom(bonus, sale, 10101, { from: sale });
+      result.logs[0].event.should.be.eq('Transfer');
     });
   });
 });
