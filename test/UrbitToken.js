@@ -62,12 +62,20 @@ contract('UrbitToken', (accounts) => {
   });
 
   context('closing the sale', () => {
+    it('should have a total supply below the hard cap', async () => {
+      (await urbitToken.HARD_CAP()).should.be.bignumber.gt(await urbitToken.totalSupply());
+    });
+
     it('should not allow non-admin to close sale', async () => {
       await expectThrow(urbitToken.closeSale({ from: bonus }));
     });
 
     it('should close sale, create tokens', async () => {
       await urbitToken.closeSale({ from: admin });
+    });
+
+    it('should not have increased the total supply beyond the hard cap', async () => {
+      (await urbitToken.HARD_CAP()).should.be.bignumber.eq(await urbitToken.totalSupply());
     });
 
     it('should only close sale once', async () => {

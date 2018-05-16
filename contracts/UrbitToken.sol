@@ -191,7 +191,5 @@ contract UrbitToken is BurnableToken, StandardToken {
 
         /// Retained tokens - 120M URB
         retainedTokensVault = createTokenVault(120000000);
-
-        require(totalSupply_ <= HARD_CAP);
     }
 }
