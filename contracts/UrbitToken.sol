@@ -156,14 +156,10 @@ contract UrbitToken is BurnableToken, StandardToken {
         return false;
     }
 
-    function calcTokens(uint32 count) internal pure returns (uint256) {
-        return count * MAGNITUDE;
-    }
-
     // Can't be `onlyAdmin` because it's called from within the constructor
     // (when `this` is not yet available); `internal` is sufficient.
     function createTokens(uint32 count, address destination) internal {
-        uint256 tokens = calcTokens(count);
+        uint256 tokens = count * MAGNITUDE;
         totalSupply_ = totalSupply_.add(tokens);
         balances[destination] = tokens;
         emit Transfer(0x0, destination, tokens);
