@@ -14,6 +14,7 @@ contract('UrbitToken', (accounts) => {
   const bonus = accounts[2];
   const sale = accounts[3];
   const referral = accounts[4];
+  const alice = accounts[5];
   var urbitToken; // eslint-disable-line no-var
 
   before(async () => {
@@ -87,6 +88,22 @@ contract('UrbitToken', (accounts) => {
     it('should allow transferFrom', async () => {
       const result = await urbitToken.transferFrom(bonus, sale, 10101, { from: sale });
       result.logs[0].event.should.be.eq('Transfer');
+    });
+  });
+
+
+  context('token locking', () => {
+    it('should get the locked balance for an owner', async () => {
+      (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.equal(0);
+    });
+    it('should fail to get the releasable balance for an owner who has no locks', async () => {
+      await expectThrow(urbitToken.releaseableBalanceOf(alice));
+    });
+    it('should not allow non-admins to lock tokens', async () => {
+      await expectThrow(urbitToken.lockTokens(bonus, 10101, sale, 11, { from: creator }));
+    });
+    it('should fail to lock token', async () => {
+      await expectThrow(urbitToken.lockTokens(bonus, 1, alice, 1, { from: admin }));
     });
   });
 });
