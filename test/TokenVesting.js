@@ -53,4 +53,8 @@ contract('TokenVesting', ([admin, bonus, sale, referral, beneficiary]) => {
     await (await new TokenVesting(await this.token.vestingOf(beneficiary))).release(this.token.address);
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
   });
+  it('should handle multiple grants to the same beneficiary', async () => {
+    await this.token.lockTokens(teamTokensVault, vestedAmount, beneficiary, this.start);
+    await this.token.lockTokens(teamTokensVault, vestedAmount, beneficiary, this.start);
+  });
 });
