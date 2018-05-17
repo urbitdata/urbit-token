@@ -100,6 +100,15 @@ contract UrbitToken is BurnableToken, StandardToken {
         saleClosed = true;
     }
 
+    /// @dev Once the token sale is closed and tokens are distributed,
+    /// burn the remaining tokens
+    function burnUnsoldTokens() external onlyAdmin {
+        require(saleClosed);
+        _burn(bonusTokensAddress, balances[bonusTokensAddress]);
+        _burn(saleTokensAddress, balances[saleTokensAddress]);
+        _burn(referralTokensAddress, balances[referralTokensAddress]);
+    }
+
     /// @dev Shorter version of vest tokens (lock for a single whole period)
     function lockTokens(address _fromVault, uint256 _tokensAmount, address _beneficiary, uint256 _unlockTime) external onlyAdmin {
         this.vestTokens(_fromVault, _tokensAmount, _beneficiary, _unlockTime, 0, 0, false); // solium-disable-line arg-overflow

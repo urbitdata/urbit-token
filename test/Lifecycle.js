@@ -87,18 +87,40 @@ contract('Urbit', (accounts) => {
   context('burn tokens', () => {
     var burned = BigNumber(0);
 
-    // The Sale, Referral, and Bonus tokens must be manually burned from each
-    // of those accounts.
-    it('should burn tokens', async () => {
+    // The Sale, Referral, and Bonus tokens *can* be manually burned from each
+    // of those accounts (or any account), even before the sale is closed.
+    it('should burn half the tokens manually', async () => {
       const burn_accounts = [sale, referral, bonus];
       for (let burnit of burn_accounts) {
         const balance = await urbitToken.balanceOf(burnit);
-        var result = await urbitToken.burn(balance, { from: burnit });
+        const fuel = balance.div(2);
+        var result = await urbitToken.burn(fuel, { from: burnit });
         result.logs[0].event.should.be.eq('Burn');
         result.logs[1].event.should.be.eq('Transfer');
-        (await urbitToken.balanceOf(burnit)).toNumber().should.be.eq(0);
-        burned = burned.plus(balance);
+        (await urbitToken.balanceOf(burnit)).should.be.bignumber.eq(balance.minus(fuel));
+        burned = burned.plus(fuel);
       }
+    });
+
+    it('should have reduced the total supply', async () => {
+      (await urbitToken.HARD_CAP()).should.be.bignumber.eq((await urbitToken.totalSupply()).plus(burned));
+    });
+
+    it('should burn sale, referral, and bonus tokens from the contract', async () => {
+      const bonusBalance = await urbitToken.balanceOf(bonus);
+      const saleBalance = await urbitToken.balanceOf(sale);
+      const referralBalance = await urbitToken.balanceOf(referral);
+      const result = await urbitToken.burnUnsoldTokens({ from: admin });
+      result.logs[0].event.should.be.eq('Burn');
+      result.logs[1].event.should.be.eq('Transfer');
+      result.logs[2].event.should.be.eq('Burn');
+      result.logs[3].event.should.be.eq('Transfer');
+      result.logs[4].event.should.be.eq('Burn');
+      result.logs[5].event.should.be.eq('Transfer');
+      (await urbitToken.balanceOf(bonus)).toNumber().should.be.eq(0);
+      (await urbitToken.balanceOf(sale)).toNumber().should.be.eq(0);
+      (await urbitToken.balanceOf(referral)).toNumber().should.be.eq(0);
+      burned = burned.plus(bonusBalance.plus(saleBalance.plus(referralBalance)));
     });
 
     it('should have reduced the total supply', async () => {

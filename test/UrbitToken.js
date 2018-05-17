@@ -71,6 +71,10 @@ contract('UrbitToken', (accounts) => {
       await expectThrow(urbitToken.closeSale({ from: bonus }));
     });
 
+    it('should not burn tokens before the sale is closed', async () => {
+      await expectThrow(urbitToken.burnUnsoldTokens({ from: admin }));
+    });
+
     it('should close sale, create tokens', async () => {
       await urbitToken.closeSale({ from: admin });
     });
@@ -91,6 +95,29 @@ contract('UrbitToken', (accounts) => {
     });
   });
 
+  context('burn unsold tokens', () => {
+    it('should not allow non-admin to burn', async () => {
+      await expectThrow(urbitToken.burnUnsoldTokens({ from: creator }));
+    });
+
+    it('should burn tokens', async () => {
+      const bonusBalance = await urbitToken.balanceOf(bonus);
+      const saleBalance = await urbitToken.balanceOf(sale);
+      const referralBalance = await urbitToken.balanceOf(referral);
+      const totalSupply = await urbitToken.totalSupply();
+      const result = await urbitToken.burnUnsoldTokens({ from: admin });
+      result.logs[0].event.should.be.eq('Burn');
+      result.logs[1].event.should.be.eq('Transfer');
+      result.logs[2].event.should.be.eq('Burn');
+      result.logs[3].event.should.be.eq('Transfer');
+      result.logs[4].event.should.be.eq('Burn');
+      result.logs[5].event.should.be.eq('Transfer');
+      (await urbitToken.balanceOf(bonus)).toNumber().should.be.eq(0);
+      (await urbitToken.balanceOf(sale)).toNumber().should.be.eq(0);
+      (await urbitToken.balanceOf(referral)).toNumber().should.be.eq(0);
+      totalSupply.should.be.bignumber.eq((await urbitToken.totalSupply()).plus(bonusBalance.plus(saleBalance.plus(referralBalance))));
+    });
+  });
 
   context('token locking', () => {
     it('should get the locked balance for an owner', async () => {
