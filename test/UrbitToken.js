@@ -2,6 +2,8 @@
 const UrbitToken = artifacts.require('../contracts/UrbitToken.sol');
 const expectThrow = require('./helpers/expectThrow.js');
 const BigNumber = require('bignumber.js');
+const latestTime = require('./helpers/latest-time');
+const { increaseTimeTo, duration } = require('./helpers/increase-time');
 
 const should = require('chai') // eslint-disable-line no-unused-vars
   .use(require('chai-as-promised'))
@@ -15,10 +17,15 @@ contract('UrbitToken', (accounts) => {
   const sale = accounts[3];
   const referral = accounts[4];
   const alice = accounts[5];
-  var urbitToken; // eslint-disable-line no-var
+  let urbitToken;
+  let teamTokensVault;
 
   before(async () => {
     urbitToken = await UrbitToken.new(admin, bonus, sale, referral);
+  });
+
+  beforeEach(async () => {
+    teamTokensVault = await urbitToken.urbitTeamTokensVault();
   });
 
   context('bad initialization', () => {
@@ -120,17 +127,39 @@ contract('UrbitToken', (accounts) => {
   });
 
   context('token locking', () => {
+    const start = latestTime() + duration.minutes(2);
+    const amount = 1000;
+
     it('should get the locked balance for an owner', async () => {
       (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.equal(0);
     });
+
     it('should fail to get the releasable balance for an owner who has no locks', async () => {
       await expectThrow(urbitToken.releaseableBalanceOf(alice));
     });
-    it('should not allow non-admins to lock tokens', async () => {
-      await expectThrow(urbitToken.lockTokens(bonus, 10101, sale, 11, { from: creator }));
+
+    it('should fail to lock token that is not in a vault', async () => {
+      await expectThrow(urbitToken.lockTokens(bonus, amount, alice, start, { from: admin }));
     });
-    it('should fail to lock token', async () => {
-      await expectThrow(urbitToken.lockTokens(bonus, 1, alice, 1, { from: admin }));
+
+    it('should not allow non-admins to lock tokens', async () => {
+      await expectThrow(urbitToken.lockTokens(teamTokensVault, amount, alice, start, { from: creator }));
+    });
+
+    it('should lock token, not be releasable immediately', async () => {
+      await urbitToken.lockTokens(teamTokensVault, amount, alice, start, { from: admin });
+      (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(0);
+      (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
+    });
+
+    it('should become releasable over time', async () => {
+      await increaseTimeTo(latestTime() + duration.minutes(5));
+      (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(0);
+      (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
+      await urbitToken.release({ from: alice });
+//      await urbitToken.releaseFor( alice, { from: creator });
+      (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(amount);
+      (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
     });
   });
 });

@@ -134,6 +134,18 @@ contract UrbitToken is BurnableToken, StandardToken {
         require(this.transferFrom(_fromVault, vesting, _tokensAmount));
     }
 
+    /// @dev releases vested tokens for the caller's own address
+    function release() external {
+        this.releaseFor(msg.sender);
+    }
+
+    /// @dev releases vested tokens for the specified address.
+    /// Can be called by any account for any address.
+    function releaseFor(address _owner) external {
+        TokenVesting tv = TokenVesting(vestingOf[_owner]);
+        tv.release(ERC20Basic(address(this)));
+    }
+
     /// @dev check the locked balance of an owner
     function lockedBalanceOf(address _owner) public view returns (uint256) {
         return balances[vestingOf[_owner]];
