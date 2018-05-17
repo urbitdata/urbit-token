@@ -156,8 +156,8 @@ contract('UrbitToken', (accounts) => {
       await increaseTimeTo(latestTime() + duration.minutes(5));
       (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(0);
       (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
-      await urbitToken.release({ from: alice });
-//      await urbitToken.releaseFor( alice, { from: creator });
+      await urbitToken.releaseVestedTokens({ from: alice });
+//      await urbitToken.releaseVestedTokensFor( alice, { from: creator });
       (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(amount);
       (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
     });
