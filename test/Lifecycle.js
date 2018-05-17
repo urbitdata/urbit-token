@@ -1,6 +1,8 @@
 /* eslint-env node, mocha */
+/* eslint no-var: 0 */
+/* eslint no-await-in-loop: 0 */
 const UrbitToken = artifacts.require('../contracts/UrbitToken.sol');
-const expectThrow = require('./helpers/expectThrow.js');
+// const expectThrow = require('./helpers/expectThrow.js');
 const BigNumber = require('bignumber.js');
 
 const should = require('chai') // eslint-disable-line no-unused-vars
@@ -90,11 +92,11 @@ contract('Urbit', (accounts) => {
     // The Sale, Referral, and Bonus tokens *can* be manually burned from each
     // of those accounts (or any account), even before the sale is closed.
     it('should burn half the tokens manually', async () => {
-      const burn_accounts = [sale, referral, bonus];
-      for (let burnit of burn_accounts) {
+      const burnAccounts = [sale, referral, bonus];
+      for (let burnit of burnAccounts) { // eslint-disable-line prefer-const, no-restricted-syntax
         const balance = await urbitToken.balanceOf(burnit);
         const fuel = balance.div(2);
-        var result = await urbitToken.burn(fuel, { from: burnit });
+        const result = await urbitToken.burn(fuel, { from: burnit });
         result.logs[0].event.should.be.eq('Burn');
         result.logs[1].event.should.be.eq('Transfer');
         (await urbitToken.balanceOf(burnit)).should.be.bignumber.eq(balance.minus(fuel));
@@ -181,5 +183,4 @@ contract('Urbit', (accounts) => {
       // Retained: ???
     });
   });
-
 });
