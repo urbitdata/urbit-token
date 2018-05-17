@@ -46,8 +46,9 @@ contract('Urbit', (accounts) => {
       var result = await urbitToken.transfer(barb, 100, { from: alix });
       // no event emitted
       result.logs.length.should.eq(0);
-      // balance remains the same
+      // balances remain the same
       (await urbitToken.balanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      (await urbitToken.balanceOf(barb)).toNumber().should.be.eq(presaleAmount);
       // barb attempts to transfer her tokens to creator
       result = await urbitToken.transfer(creator, 100, { from: barb });
       // no event emitted
@@ -116,6 +117,24 @@ contract('Urbit', (accounts) => {
 
   context('releasing vested tokens', () => {
     it('should release all tokens for the same recipient at the same time', async () => {
+    });
+  });
+
+  context('final disposition of token balances', () => {
+    it('should leave all of the token vaults and accounts in the following state', async () => {
+      // creator: 0
+      (await urbitToken.balanceOf(creator)).toNumber().should.be.eq(0);
+      (await urbitToken.lockedBalanceOf(creator)).toNumber().should.be.eq(0);
+      // Admin: 0
+      (await urbitToken.balanceOf(admin)).toNumber().should.be.eq(0);
+      (await urbitToken.lockedBalanceOf(admin)).toNumber().should.be.eq(0);
+      // Bonus: ???
+      // Sale: ???
+      // Referral: ???
+      // UrbitTeam: ???
+      // Bounty: ???
+      // Rewards: ???
+      // Retained: ???
     });
   });
 
