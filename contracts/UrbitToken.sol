@@ -101,7 +101,7 @@ contract UrbitToken is BurnableToken, StandardToken {
     }
 
     /// @dev Once the token sale is closed and tokens are distributed,
-    /// burn the remaining tokens
+    /// burn the remaining unsold, undistributed tokens
     function burnUnsoldTokens() external onlyAdmin {
         require(saleClosed);
         _burn(bonusTokensAddress, balances[bonusTokensAddress]);
