@@ -79,8 +79,30 @@ contract('Urbit', (accounts) => {
       await urbitToken.closeSale({ from: admin });
     });
 
-    it('should increased the total supply to equal the hard cap', async () => {
+    it('should increase the total supply to equal the hard cap', async () => {
       (await urbitToken.HARD_CAP()).should.be.bignumber.eq(await urbitToken.totalSupply());
+    });
+  });
+
+  context('burn tokens', () => {
+    var burned = BigNumber(0);
+
+    // The Sale, Referral, and Bonus tokens must be manually burned from each
+    // of those accounts.
+    it('should burn tokens', async () => {
+      const burn_accounts = [sale, referral, bonus];
+      for (let burnit of burn_accounts) {
+        const balance = await urbitToken.balanceOf(burnit);
+        var result = await urbitToken.burn(balance, { from: burnit });
+        result.logs[0].event.should.be.eq('Burn');
+        result.logs[1].event.should.be.eq('Transfer');
+        (await urbitToken.balanceOf(burnit)).toNumber().should.be.eq(0);
+        burned = burned.plus(balance);
+      }
+    });
+
+    it('should have reduced the total supply', async () => {
+      (await urbitToken.HARD_CAP()).should.be.bignumber.eq((await urbitToken.totalSupply()).plus(burned));
     });
   });
 
