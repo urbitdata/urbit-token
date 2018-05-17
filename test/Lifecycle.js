@@ -27,10 +27,10 @@ contract('Urbit', (accounts) => {
     urbitToken = await UrbitToken.new(admin, bonus, sale, referral);
   });
 
-  context('pre-sale', () => {
+  context('pre-sale buyers', () => {
     it('should send tokens to pre-sale buyers', async () => {
       // send tokens to alix
-      let result = await urbitToken.transfer(alix, presaleAmount, { from: sale });
+      var result = await urbitToken.transfer(alix, presaleAmount, { from: sale });
       result.logs[0].event.should.be.eq('Transfer');
       // verify balance
       (await urbitToken.balanceOf(alix)).toNumber().should.be.eq(presaleAmount);
@@ -42,14 +42,34 @@ contract('Urbit', (accounts) => {
     });
 
     it('should not allow pre-sale buyers to transfer their tokens', async () => {
-      result = await urbitToken.transfer(barb, 100, { from: alix });
+      // alix attempts to transfer her tokens to barb
+      var result = await urbitToken.transfer(barb, 100, { from: alix });
       // no event emitted
       result.logs.length.should.eq(0);
       // balance remains the same
       (await urbitToken.balanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      // barb attempts to transfer her tokens to creator
       result = await urbitToken.transfer(creator, 100, { from: barb });
+      // no event emitted
       result.logs.length.should.eq(0);
+      // balance remains the same
       (await urbitToken.balanceOf(barb)).toNumber().should.be.eq(presaleAmount);
+    });
+  });
+
+  context('bonus tokens', () => {
+    it('should send bonus tokens to pre-sale buyers', async () => {
+    });
+
+    it('should not allow bonus token holders to transfer their tokens', async () => {
+    });
+  });
+
+  context('referral tokens', () => {
+    it('should send referral tokens to referrers of pre-sale buyers', async () => {
+    });
+
+    it('should not allow referral token holders to transfer their tokens', async () => {
     });
   });
 
@@ -58,16 +78,21 @@ contract('Urbit', (accounts) => {
       await urbitToken.closeSale({ from: admin });
     });
 
-    it('should not have increased the total supply beyond the hard cap', async () => {
+    it('should increased the total supply to equal the hard cap', async () => {
       (await urbitToken.HARD_CAP()).should.be.bignumber.eq(await urbitToken.totalSupply());
     });
   });
 
   context('after the sale is closed', () => {
     it('should allow transferFrom', async () => {
-      // alix sends tokens
-      //  const result = await urbitToken.transferFrom(bonus, sale, 10101, { from: sale });
-      //  result.logs[0].event.should.be.eq('Transfer');
+      // alix sends her presale tokens to barb
+      var result = await urbitToken.transfer(barb, presaleAmount, { from: alix });
+      result.logs[0].event.should.be.eq('Transfer');
+      // barb should have alix's tokens and her own
+      (await urbitToken.balanceOf(alix)).toNumber().should.be.eq(0);
+      (await urbitToken.balanceOf(barb)).toNumber().should.be.eq(2 * presaleAmount);
+      // barb sends the presale tokens back to alix
+      result = await urbitToken.transfer(alix, presaleAmount, { from: barb });
     });
   });
 
