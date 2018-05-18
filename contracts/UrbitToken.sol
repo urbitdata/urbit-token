@@ -151,9 +151,9 @@ contract UrbitToken is BurnableToken, StandardToken {
         return balances[vestingOf[_owner]];
     }
 
-    /// @dev check the locked but releaseable balance of an owner
-    function releaseableBalanceOf(address _owner) public view returns (uint256) {
-        return TokenVesting(vestingOf[_owner]).vestedAmount(this);
+    /// @dev check the locked but releasable balance of an owner
+    function releasableBalanceOf(address _owner) public view returns (uint256) {
+        return TokenVesting(vestingOf[_owner]).releasableAmount(this);
     }
 
     /// @dev get the TokenVesting contract address for an owner

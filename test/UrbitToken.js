@@ -24,8 +24,14 @@ contract('UrbitToken', (accounts) => {
     urbitToken = await UrbitToken.new(admin, bonus, sale, referral);
   });
 
+  // sets up a token with prep for a two-year lock
   beforeEach(async () => {
     teamTokensVault = await urbitToken.urbitTeamTokensVault();
+    this.token = await UrbitToken.new(admin, bonus, sale, referral);
+    this.start = latestTime() + duration.minutes(1); // +1 minute so it starts after contract instantiation
+    this.duration = duration.years(2);
+    await this.token.closeSale({ from: admin });
+    this.teamTokensVault = await this.token.urbitTeamTokensVault();
   });
 
   context('bad initialization', () => {
@@ -135,7 +141,7 @@ contract('UrbitToken', (accounts) => {
     });
 
     it('should fail to get the releasable balance for an owner who has no locks', async () => {
-      await expectThrow(urbitToken.releaseableBalanceOf(alice));
+      await expectThrow(urbitToken.releasableBalanceOf(alice));
     });
 
     it('should fail to lock token that is not in a vault', async () => {
@@ -149,17 +155,51 @@ contract('UrbitToken', (accounts) => {
     it('should lock token, not be releasable immediately', async () => {
       await urbitToken.lockTokens(teamTokensVault, amount, alice, start, { from: admin });
       (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(0);
-      (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
+      (await urbitToken.releasableBalanceOf(alice)).toNumber().should.be.eq(amount);
     });
 
     it('should become releasable over time', async () => {
-      await increaseTimeTo(latestTime() + duration.minutes(5));
-      (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(0);
-      (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
-      await urbitToken.releaseVestedTokens({ from: alice });
-//      await urbitToken.releaseVestedTokensFor( alice, { from: creator });
-      (await urbitToken.balanceOf(alice)).toNumber().should.be.eq(amount);
-      (await urbitToken.releaseableBalanceOf(alice)).toNumber().should.be.eq(amount);
+      // Alice has no balance and no vested tokens
+      (await this.token.balanceOf(alice)).toNumber().should.be.eq(0);
+      await expectThrow(this.token.releasableBalanceOf(alice));
+      // Alice can't send
+      await expectThrow(this.token.transfer(admin, amount, { from: alice }));
+      // vest tokens for Alice
+      await this.token.lockTokens(this.teamTokensVault, amount, alice, this.start, { from: admin });
+      // Alice still can't send
+      await expectThrow(this.token.transfer(admin, amount, { from: alice }));
+      // Turn time forward
+      await increaseTimeTo(latestTime() + duration.minutes(1));
+      (await this.token.balanceOf(alice)).toNumber().should.be.eq(0);
+      (await this.token.releasableBalanceOf(alice)).toNumber().should.be.eq(amount);
+      // alice calls the contract to release her vested tokens
+      await this.token.releaseVestedTokens({ from: alice });
+      // She should now have a regular token balance, and no releasable tokens
+      (await this.token.balanceOf(alice)).toNumber().should.be.eq(amount);
+      (await this.token.releasableBalanceOf(alice)).toNumber().should.be.eq(0);
+      // Alice can send
+      const result = await this.token.transfer(admin, amount, { from: alice });
+      result.logs[0].event.should.be.eq('Transfer');
+      // Alice doesn't have any tokens left
+      (await this.token.balanceOf(alice)).toNumber().should.be.eq(0);
+      (await this.token.releasableBalanceOf(alice)).toNumber().should.be.eq(0);
+      // Alice can't send
+      await expectThrow(this.token.transfer(admin, amount, { from: alice }));
+    });
+
+    // Slimmer version of the test above to test releasing on the behalf of others
+    it('should allow anyone to release on behalf of anyone else', async () => {
+      // vest tokens for Alice
+      await this.token.lockTokens(this.teamTokensVault, amount, alice, this.start, { from: admin });
+      // Turn time forward
+      await increaseTimeTo(latestTime() + duration.minutes(1));
+      // creator releases on behalf of alice.
+      await this.token.releaseVestedTokensFor( alice, { from: creator });
+      (await this.token.balanceOf(alice)).toNumber().should.be.eq(amount);
+      (await this.token.releasableBalanceOf(alice)).toNumber().should.be.eq(0);
+      // Alice can send
+      const result = await this.token.transfer(admin, amount, { from: alice });
+      result.logs[0].event.should.be.eq('Transfer');
     });
   });
 });

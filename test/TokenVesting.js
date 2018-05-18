@@ -41,7 +41,7 @@ contract('TokenVesting', ([admin, bonus, sale, referral, beneficiary]) => {
   it('should lock balance before start', async () => {
     await this.token.lockTokens(teamTokensVault, vestedAmount, beneficiary, this.start);
     (await this.token.lockedBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
-    (await this.token.releaseableBalanceOf(beneficiary)).should.bignumber.equal(ZERO);
+    (await this.token.releasableBalanceOf(beneficiary)).should.bignumber.equal(ZERO);
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(ZERO);
   });
 
@@ -49,7 +49,7 @@ contract('TokenVesting', ([admin, bonus, sale, referral, beneficiary]) => {
     await this.token.lockTokens(teamTokensVault, vestedAmount, beneficiary, this.start);
     await increaseTimeTo(this.start + duration.minutes(1));
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(ZERO);
-    (await this.token.releaseableBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
+    (await this.token.releasableBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
     await (await new TokenVesting(await this.token.vestingOf(beneficiary))).release(this.token.address);
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
   });
