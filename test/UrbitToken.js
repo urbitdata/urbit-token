@@ -19,7 +19,6 @@ contract('UrbitToken', (accounts) => {
   const alice = accounts[5];
   const amount = 1000;
   let urbitToken;
-  let teamTokensVault;
 
   before(async () => {
     urbitToken = await UrbitToken.new(admin, bonus, sale, referral);
@@ -27,7 +26,6 @@ contract('UrbitToken', (accounts) => {
 
   // sets up a token with prep for a two-year lock
   beforeEach(async () => {
-    teamTokensVault = await urbitToken.urbitTeamTokensVault();
     this.token = await UrbitToken.new(admin, bonus, sale, referral);
     this.start = latestTime() + duration.minutes(1); // +1 minute so it starts after contract instantiation
     this.duration = duration.years(2);
@@ -64,7 +62,7 @@ contract('UrbitToken', (accounts) => {
       await expectThrow(urbitToken.transfer(0, 10101, { from: bonus }));
 
       // should not allow transfer by other
-      let  result = await urbitToken.transfer(admin, 10101, { from: creator });
+      let result = await urbitToken.transfer(admin, 10101, { from: creator });
       result.logs.length.should.eq(0);
 
       // should not allow transferFrom
@@ -183,7 +181,7 @@ contract('UrbitToken', (accounts) => {
       // Turn time forward
       await increaseTimeTo(latestTime() + duration.minutes(1));
       // creator releases on behalf of alice.
-      await this.token.releaseVestedTokensFor( alice, { from: creator });
+      await this.token.releaseVestedTokensFor(alice, { from: creator });
       (await this.token.balanceOf(alice)).toNumber().should.be.eq(amount);
       (await this.token.releasableBalanceOf(alice)).toNumber().should.be.eq(0);
       // Alice can send
