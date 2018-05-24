@@ -4,6 +4,8 @@
 const UrbitToken = artifacts.require('../contracts/UrbitToken.sol');
 // const expectThrow = require('./helpers/expectThrow.js');
 const BigNumber = require('bignumber.js');
+const latestTime = require('./helpers/latest-time');
+const { increaseTimeTo, duration } = require('./helpers/increase-time');
 
 const should = require('chai') // eslint-disable-line no-unused-vars
   .use(require('chai-as-promised'))
@@ -16,14 +18,15 @@ contract('Urbit', (accounts) => {
   const bonus = accounts[2];
   const sale = accounts[3];
   const referral = accounts[4];
-  const alix = accounts[5];
-  const barb = accounts[6];
-  // const carl = accounts[7];
-  // const doug = accounts[8];
+  const alix = accounts[5]; // purchaser, bonus recipient
+  const barb = accounts[6]; // purchaser, bonus, referral recipient
+  const carl = accounts[7]; // referral recipient
+  const doug = accounts[8]; // team bonus recipient
   // const earl = accounts[9];
   var urbitToken; // eslint-disable-line no-var
 
   const presaleAmount = 1000;
+  const teamAmount = 10000;
 
   before(async () => {
     urbitToken = await UrbitToken.new(admin, bonus, sale, referral);
@@ -60,19 +63,24 @@ contract('Urbit', (accounts) => {
     });
   });
 
-  context('bonus tokens', () => {
-    it('should send bonus tokens to pre-sale buyers', async () => {
+  context('bonus and referral tokens', () => {
+    xit('should send bonus tokens to pre-sale buyers', async () => {
+      // TokenGet will call lockTokens()
+      // lockTokens->vestTokens->UrbitTokenVesting will add the
+      // 
+      // TODO
+//      var result = await urbitToken.lockTokens(bonus, presaleAmount, alix, 'two months');
+      // 
+//      result = await urbitToken.lockTokens(bonus, presaleAmount, barb, 'two months');
+//      result = await urbitToken.lockTokens(referral, presaleAmount, barb, 'two months');
+//      result = await urbitToken.lockTokens(referral, presaleAmount, carl, 'two months');
     });
 
-    it('should not allow bonus token holders to transfer their tokens', async () => {
-    });
-  });
-
-  context('referral tokens', () => {
-    it('should send referral tokens to referrers of pre-sale buyers', async () => {
-    });
-
-    it('should not allow referral token holders to transfer their tokens', async () => {
+    xit('should show bonus and referral tokens as locked', async () => {
+      // Should be locked (will not be unlocked until 2 months after close)
+      (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      (await urbitToken.lockedBalanceOf(barb)).toNumber().should.be.eq(presaleAmount*2);
+      (await urbitToken.lockedBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
     });
   });
 
@@ -143,26 +151,80 @@ contract('Urbit', (accounts) => {
     });
   });
 
+  context('should vest bonus and referral tokens 2 months after closeSale', () => {
+    xit('should still be locked', async () => {
+      (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      (await urbitToken.lockedBalanceOf(barb)).toNumber().should.be.eq(presaleAmount*2);
+      (await urbitToken.lockedBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
+    });
+
+    xit('should still be locked one month later', async () => {
+      // TODO: advance time 30 days
+      (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      (await urbitToken.lockedBalanceOf(barb)).toNumber().should.be.eq(presaleAmount*2);
+      (await urbitToken.lockedBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
+    });
+
+    xit('should still be locked two weeks later', async () => {
+      // TODO: advance time 14 days
+      (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      (await urbitToken.lockedBalanceOf(barb)).toNumber().should.be.eq(presaleAmount*2);
+      (await urbitToken.lockedBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
+    });
+
+    xit('should be able to release balance two months after closeSale', async () => {
+      // TODO: advance time 14 days
+      (await urbitToken.releasableBalanceOf(alix)).toNumber().should.be.eq(presaleAmount);
+      (await urbitToken.releasableBalanceOf(barb)).toNumber().should.be.eq(presaleAmount*2);
+      (await urbitToken.releasableBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
+    });
+
+    xit('should now be unlockable', async () => {
+      (await urbitToken.releaseVestedTokens({ from: alix }));
+      (await urbitToken.releaseVestedTokensFor(barb, { from: admin }));
+      (await urbitToken.releaseVestedTokensFor(carl, { from: creator }));
+      (await urbitToken.releasableBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
+    });
+
+    xit('should be able to transfer those tokens', async () => {
+      // use carl because he has only the referral
+      (await urbitToken.balanceOf(carl)).toNumber().should.be.eq(presaleAmount);
+      var result = await urbitToken.transfer(admin, presaleAmount, { from: carl });
+      result.logs[0].event.should.be.eq('Transfer');
+      (await urbitToken.balanceOf(carl)).toNumber().should.be.eq(0);
+      // admin gives it back
+      await urbitToken.transfer(carl, presaleAmount, { from: admin });
+    });
+  });
+
+  // Now we start to grant tokens for the team, etc
   context('vest tokens', () => {
-    it('should lock tokens', async () => {
-      //  (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.equal(0);
+    it('should vest team tokens', async () => {
+      var urbitTeamTokensVault = await urbitToken.urbitTeamTokensVault();
+      urbitTeamTokensVault.toString().length.should.be.eq(42);
+      // should start at zero
+      (await urbitToken.balanceOf(doug)).toNumber().should.be.eq(0);
+      (await urbitToken.lockedBalanceOf(doug)).toNumber().should.be.eq(0);
+      // TODO vestTokens for doug
+      var latest = latestTime();
+//      var result = await urbitToken.vestTokens(urbitTeamTokensVault, teamAmount, doug, latest + duration.minutes(1), latest + duration.hours(1), duration.days(365), false, { from: admin });
     });
-    it('should get the locked balance for an owner', async () => {
-      //  (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.equal(0);
+    xit('should get the locked balance for an owner', async () => {
+      //  (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.eq(0);
     });
-    it('should fail to get the releasable balance for an owner who has no locks', async () => {
+    xit('should fail to get the releasable balance for an owner who has no locks', async () => {
       //  await expectThrow(urbitToken.releaseableBalanceOf(alice));
     });
-    it('should not allow non-admins to lock tokens', async () => {
+    xit('should not allow non-admins to lock tokens', async () => {
       //  await expectThrow(urbitToken.lockTokens(bonus, 10101, sale, 11, { from: creator }));
     });
-    it('should fail to lock token', async () => {
+    xit('should check to see if a token lock already exists for a given address', async () => {
       //  await expectThrow(urbitToken.lockTokens(bonus, 1, alice, 1, { from: admin }));
     });
   });
 
   context('releasing vested tokens', () => {
-    it('should release all tokens for the same recipient at the same time', async () => {
+    xit('should release all tokens for the same recipient at the same time', async () => {
     });
   });
 
@@ -174,13 +236,13 @@ contract('Urbit', (accounts) => {
       // Admin: 0
       (await urbitToken.balanceOf(admin)).toNumber().should.be.eq(0);
       (await urbitToken.lockedBalanceOf(admin)).toNumber().should.be.eq(0);
-      // Bonus: ???
-      // Sale: ???
-      // Referral: ???
-      // UrbitTeam: ???
-      // Bounty: ???
-      // Rewards: ???
-      // Retained: ???
+      // Bonus: TODO
+      // Sale: TODO
+      // Referral: TODO
+      // UrbitTeam: TODO
+      // Bounty: TODO
+      // Rewards: TODO
+      // Retained: TODO
     });
   });
 });
