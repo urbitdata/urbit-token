@@ -4,17 +4,17 @@
   "private": true,
   "description": "Urbit.io token",
   "devDependencies": {
-    "babel-preset-env": "^1.6.1",
+    "babel-preset-env": "^1.7.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^2.0.2",
     "coveralls": "^3.0.1",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.11.0",
+    "eslint-plugin-import": "^2.12.0",
     "solidity-coverage": "^0.4.15",
     "solium": "^1.1.7",
-    "truffle": "^4.1.8"
+    "truffle": "^4.1.11"
   },
   "license": "MIT",
   "scripts": {
@@ -26,9 +26,9 @@
   },
   "dependencies": {
     "babel-register": "^6.26.0",
-    "bignumber.js": "^7.0.1",
+    "bignumber.js": "^7.2.1",
     "openzeppelin-solidity": "^1.9.0",
-    "solc": "^0.4.23",
+    "solc": "^0.4.24",
     "web3": "^1.0.0-beta.34"
   }
 }
