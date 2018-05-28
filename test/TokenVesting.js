@@ -24,7 +24,6 @@ contract('TokenVesting', ([admin, sale, beneficiary]) => {
     await this.token.createSaleTokens({ from: admin });
 
     this.start = latestTime() + duration.minutes(1); // +1 minute so it starts after contract instantiation
-    this.duration = duration.years(2);
 
     await this.token.closeSale({ from: admin });
 
