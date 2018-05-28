@@ -50,11 +50,17 @@ contract('TokenVesting', ([admin, sale, beneficiary]) => {
     await increaseTimeTo(this.start + duration.minutes(1));
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(ZERO);
     (await this.token.releasableBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
-    await (await new TokenVesting(await this.token.vestingOf(beneficiary))).release(this.token.address);
+    (await this.token.vestingCountOf(beneficiary)).toNumber().should.equal(1);
+    await (await new TokenVesting(await this.token.vestingOf(beneficiary, 0))).release(this.token.address);
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
   });
   it('should handle multiple grants to the same beneficiary', async () => {
     await this.token.lockTokens(teamTokensVault, vestedAmount, beneficiary, this.start);
     await this.token.lockTokens(teamTokensVault, vestedAmount, beneficiary, this.start);
+    (await this.token.vestingCountOf(beneficiary)).toNumber().should.equal(2);
+    (await this.token.lockedBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount.mul(2));
+    await increaseTimeTo(this.start + duration.minutes(1));
+    (await this.token.releasableBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount.mul(2));
+    await this.token.releaseVestedTokensFor(beneficiary);
   });
 });

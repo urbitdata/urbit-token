@@ -20,7 +20,7 @@ contract('Urbit', (accounts) => {
   const barb = accounts[6]; // purchaser, bonus, referral recipient
   const carl = accounts[7]; // referral recipient
   const doug = accounts[8]; // team bonus recipient
-  const earl = accounts[9];
+  // const earl = accounts[9];
   var urbitToken; // eslint-disable-line no-var
 
   const presaleAmount = 1000;
@@ -208,10 +208,6 @@ contract('Urbit', (accounts) => {
 
     it('should get the locked balance for an address', async () => {
       (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(0);
-    });
-
-    it('should fail to get the releasable balance for an address which has no locks', async () => {
-      await expectThrow(urbitToken.releasableBalanceOf(earl));
     });
 
     it('should not allow non-admins to lock tokens', async () => {

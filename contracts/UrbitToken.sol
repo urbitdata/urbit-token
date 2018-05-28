@@ -51,7 +51,7 @@ contract UrbitToken is BurnableToken, StandardToken {
     TokenVault public retainedTokensVault;
 
     /// Store the vesting contracts addresses
-    mapping(address => address) public vestingOf;
+    mapping(address => address[]) public vestingsOf;
 
     /// when the token sale is closed, the trading is open
     uint256 public saleClosedTimestamp = 0;
@@ -136,11 +136,8 @@ contract UrbitToken is BurnableToken, StandardToken {
         bool _revocable)
         external onlyAdmin
     {
-        TokenVesting vesting = TokenVesting(vestingOf[_beneficiary]);
-        if (vesting == address(0)) {
-            vesting = new TokenVesting(_beneficiary, _start, _cliff, _duration, _revocable);
-            vestingOf[_beneficiary] = address(vesting);
-        }
+        TokenVesting vesting = new TokenVesting(_beneficiary, _start, _cliff, _duration, _revocable);
+        vestingsOf[_beneficiary].push(address(vesting));
 
         require(this.transferFrom(_fromVault, vesting, _tokensAmount));
     }
@@ -153,8 +150,10 @@ contract UrbitToken is BurnableToken, StandardToken {
     /// @dev releases vested tokens for the specified address.
     /// Can be called by any account for any address.
     function releaseVestedTokensFor(address _owner) external {
-        TokenVesting tv = TokenVesting(vestingOf[_owner]);
-        tv.release(ERC20Basic(address(this)));
+        for (uint i = 0; i < vestingsOf[_owner].length; i++) {
+            TokenVesting tv = TokenVesting(vestingsOf[_owner][i]);
+            tv.release(ERC20Basic(address(this)));
+        }
     }
 
     /// @dev returns whether the sender is admin (or the contract itself)
@@ -167,19 +166,32 @@ contract UrbitToken is BurnableToken, StandardToken {
         return (saleClosedTimestamp > 0);
     }
 
-    /// @dev check the locked balance of an owner
+    /// @dev check the locked balance of an address
     function lockedBalanceOf(address _owner) public view returns (uint256) {
-        return balances[vestingOf[_owner]];
+        uint256 result = 0;
+        for (uint i = 0; i < vestingsOf[_owner].length; i++) {
+            result += balances[vestingsOf[_owner][i]];
+        }
+        return result;
     }
 
-    /// @dev check the locked but releasable balance of an owner
+    /// @dev check the locked but releasable balance of an address
     function releasableBalanceOf(address _owner) public view returns (uint256) {
-        return TokenVesting(vestingOf[_owner]).releasableAmount(this);
+        uint256 result = 0;
+        for (uint i = 0; i < vestingsOf[_owner].length; i++) {
+            result += TokenVesting(vestingsOf[_owner][i]).releasableAmount(this);
+        }
+        return result;
     }
 
-    /// @dev get the TokenVesting contract address for an owner
-    function vestingOf(address _owner) public view returns (address) {
-        return vestingOf[_owner];
+    /// @dev get the number of TokenVesting contracts for an address
+    function vestingCountOf(address _owner) public view returns (uint) {
+        return vestingsOf[_owner].length;
+    }
+
+    /// @dev get the specified TokenVesting contract address for an owner
+    function vestingOf(address _owner, uint _index) public view returns (address) {
+        return vestingsOf[_owner][_index];
     }
 
     /// @dev Trading is limited before the sale is closed
@@ -200,11 +212,8 @@ contract UrbitToken is BurnableToken, StandardToken {
 
     /// @dev Grant tokens which begin vesting upon close of sale.
     function _presaleLock(TokenVault _fromVault, uint256 _tokensAmount, address _beneficiary, uint256 _duration) internal {
-        TokenVesting vesting = TokenVesting(vestingOf[_beneficiary]);
-        if (vesting == address(0)) {
-            vesting = new PresaleTokenVesting(_beneficiary, _duration);
-            vestingOf[_beneficiary] = address(vesting);
-        }
+        PresaleTokenVesting vesting = new PresaleTokenVesting(_beneficiary, _duration);
+        vestingsOf[_beneficiary].push(address(vesting));
 
         require(this.transferFrom(_fromVault, vesting, _tokensAmount));
     }

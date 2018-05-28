@@ -66,13 +66,13 @@ contract('PresaleTokenVesting', ([admin, sale, beneficiary]) => {
     await increaseTimeTo((await this.token.saleClosedTimestamp()).plus(duration.days(91)));
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(ZERO);
     (await this.token.releasableBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
-    await (await new TokenVesting(await this.token.vestingOf(beneficiary))).release(this.token.address);
+    (await this.token.vestingCountOf(beneficiary)).toNumber().should.equal(1);
+    await (await new TokenVesting(await this.token.vestingOf(beneficiary, 0))).release(this.token.address);
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
   });
 
   it('should handle multiple grants to the same beneficiary', async () => {
     await this.token.lockBonusTokens(vestedAmount, beneficiary, this.start);
     await this.token.lockReferralTokens(vestedAmount, beneficiary, this.start);
-    // TODO: handle conflicting durations
   });
 });

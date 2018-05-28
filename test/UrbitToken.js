@@ -140,8 +140,8 @@ contract('UrbitToken', (accounts) => {
       // should get the locked balance for an owner
       (await this.token.lockedBalanceOf(alice)).toNumber().should.be.equal(0);
 
-      // should fail to get the releasable balance for an owner who has no locks
-      await expectThrow(this.token.releasableBalanceOf(alice));
+      // should get the releasable balance for an owner who has no locks
+      await this.token.releasableBalanceOf(alice);
 
       // should fail to lock token that is not in a vault
       await expectThrow(this.token.lockTokens(sale, amount, alice, this.start, { from: admin }));
@@ -158,7 +158,7 @@ contract('UrbitToken', (accounts) => {
     it('should become releasable over time', async () => {
       // Alice has no balance and no vested tokens
       (await this.token.balanceOf(alice)).toNumber().should.be.eq(0);
-      await expectThrow(this.token.releasableBalanceOf(alice));
+      (await this.token.releasableBalanceOf(alice)).toNumber().should.be.eq(0);
       // Alice can't send
       await expectThrow(this.token.transfer(admin, amount, { from: alice }));
       // vest tokens for Alice
