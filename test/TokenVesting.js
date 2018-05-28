@@ -12,7 +12,7 @@ require('chai')
 const UrbitToken = artifacts.require('UrbitToken');
 const TokenVesting = artifacts.require('TokenVesting');
 
-contract('TokenVesting', ([admin, bonus, sale, referral, beneficiary]) => {
+contract('TokenVesting', ([admin, sale, beneficiary]) => {
   let MAGNITUDE;
   let teamTokensVault;
   let teamTokensVaultAmount;
@@ -20,7 +20,8 @@ contract('TokenVesting', ([admin, bonus, sale, referral, beneficiary]) => {
   const vestedAmount = new BigNumber(1000);
 
   beforeEach(async () => {
-    this.token = await UrbitToken.new(admin, bonus, sale, referral);
+    this.token = await UrbitToken.new(admin, sale);
+    await this.token.createSaleTokens({ from: admin });
 
     this.start = latestTime() + duration.minutes(1); // +1 minute so it starts after contract instantiation
     this.duration = duration.years(2);

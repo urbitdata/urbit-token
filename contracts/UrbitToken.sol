@@ -5,6 +5,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/TokenVesting.sol";
+import "./PresaleTokenVesting.sol";
 import "./TokenVault.sol";
 
 
@@ -22,6 +23,18 @@ contract UrbitToken is BurnableToken, StandardToken {
     /// Maximum tokens to be allocated (600 million)
     uint256 public constant HARD_CAP = 600000000 * MAGNITUDE;
 
+    /// This address is used to manage the admin functions and allocate vested tokens
+    address public urbitAdminAddress;
+
+    /// This address is used to keep the tokens for sale
+    address public saleTokensAddress;
+
+    /// This vault is used to keep the bonus tokens
+    TokenVault public bonusTokensVault;
+
+    /// This vault is used to keep the referral tokens
+    TokenVault public referralTokensVault;
+
     /// This vault is used to keep the team and founders tokens
     TokenVault public urbitTeamTokensVault;
 
@@ -37,27 +50,15 @@ contract UrbitToken is BurnableToken, StandardToken {
     /// This vault is used to keep the retained tokens
     TokenVault public retainedTokensVault;
 
-    /// This address is used to manage the admin functions and allocate vested tokens
-    address public urbitAdminAddress;
-
-    /// This address is used to keep the tokens for sale
-    address public saleTokensAddress;
-
-    /// This address is used to keep the referral tokens
-    address public referralTokensAddress;
-
-    /// This address is used to keep the bonus tokens
-    address public bonusTokensAddress;
-
     /// Store the vesting contracts addresses
     mapping(address => address) public vestingOf;
 
     /// when the token sale is closed, the trading is open
-    bool public saleClosed = false;
+    uint256 public saleClosedTimestamp = 0;
 
     /// Only allowed to execute before the token sale is closed
     modifier beforeSaleClosed {
-        require(!saleClosed);
+        require(!saleClosed());
         _;
     }
 
@@ -69,44 +70,50 @@ contract UrbitToken is BurnableToken, StandardToken {
 
     function UrbitToken(
         address _urbitAdminAddress,
-        address _bonusTokensAddress,
-        address _saleTokensAddress,
-        address _referralTokensAddress) public
+        address _saleTokensAddress) public
     {
         require(_urbitAdminAddress != address(0));
-        require(_bonusTokensAddress != address(0));
         require(_saleTokensAddress != address(0));
-        require(_referralTokensAddress != address(0));
 
         urbitAdminAddress = _urbitAdminAddress;
-        bonusTokensAddress = _bonusTokensAddress;
         saleTokensAddress = _saleTokensAddress;
-        referralTokensAddress = _referralTokensAddress;
+    }
+
+    /// @dev creates the tokens needed for sale
+    function createSaleTokens() external onlyAdmin beforeSaleClosed {
 
         /// Maximum tokens to be allocated on the sale
         /// 191,502,887 URB
         createTokens(191502887, saleTokensAddress);
 
-        /// Referral tokens - 19,150,290 URB
-        createTokens(19150290, referralTokensAddress);
-
         /// Bonus tokens - 41,346,823 URB
-        createTokens(41346823, bonusTokensAddress);
+        bonusTokensVault = createTokenVault(41346823);
+
+        /// Referral tokens - 19,150,290 URB
+        referralTokensVault = createTokenVault(19150290);
     }
 
     /// @dev Close the token sale
     function closeSale() external onlyAdmin beforeSaleClosed {
-        createVestableTokens();
-        saleClosed = true;
+        createAwardTokens();
+        saleClosedTimestamp = block.timestamp; // solium-disable-line security/no-block-members
     }
 
     /// @dev Once the token sale is closed and tokens are distributed,
     /// burn the remaining unsold, undistributed tokens
     function burnUnsoldTokens() external onlyAdmin {
-        require(saleClosed);
-        _burn(bonusTokensAddress, balances[bonusTokensAddress]);
+        require(saleClosed());
         _burn(saleTokensAddress, balances[saleTokensAddress]);
-        _burn(referralTokensAddress, balances[referralTokensAddress]);
+        _burn(bonusTokensVault, balances[bonusTokensVault]);
+        _burn(referralTokensVault, balances[referralTokensVault]);
+    }
+
+    function lockBonusTokens(address _beneficiary, uint256 _tokensAmount, uint256 _duration) external beforeSaleClosed {
+        _presaleLock(bonusTokensVault, _beneficiary, _tokensAmount, _duration);
+    }
+
+    function lockReferralTokens(address _beneficiary, uint256 _tokensAmount, uint256 _duration) external beforeSaleClosed {
+        _presaleLock(referralTokensVault, _beneficiary, _tokensAmount, _duration);
     }
 
     /// @dev Shorter version of vest tokens (lock for a single whole period)
@@ -146,6 +153,11 @@ contract UrbitToken is BurnableToken, StandardToken {
         tv.release(ERC20Basic(address(this)));
     }
 
+    /// @dev The sale is closed when the saleClosedTimestamp is set.
+    function saleClosed() public view returns (bool) {
+        return (saleClosedTimestamp > 0);
+    }
+
     /// @dev check the locked balance of an owner
     function lockedBalanceOf(address _owner) public view returns (uint256) {
         return balances[vestingOf[_owner]];
@@ -163,18 +175,32 @@ contract UrbitToken is BurnableToken, StandardToken {
 
     /// @dev Trading limited - requires the token sale to have closed
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        if (saleClosed) {
+        if (saleClosed()) {
             return super.transferFrom(_from, _to, _value);
         }
         return false;
     }
 
-    /// @dev Trading limited - requires the token sale to have closed
+    /// @dev Trading is limited before sale is closed
     function transfer(address _to, uint256 _value) public returns (bool) {
-        if (saleClosed || msg.sender == saleTokensAddress || msg.sender == referralTokensAddress || msg.sender == bonusTokensAddress) {
+        if (saleClosed() || msg.sender == saleTokensAddress) {
             return super.transfer(_to, _value);
         }
         return false;
+    }
+
+    // Allow for vesting of the Bonus and Referral vaults before
+    // the sale is closed.
+    function _presaleLock(TokenVault _fromVault, address _beneficiary, uint256 _tokensAmount, uint256 _duration) internal {
+        require(!saleClosed());
+        require(msg.sender == saleTokensAddress || msg.sender == urbitAdminAddress || msg.sender == address(this));
+        TokenVesting vesting = TokenVesting(vestingOf[_beneficiary]);
+        if (vesting == address(0)) {
+            vesting = new PresaleTokenVesting(_beneficiary, _duration);
+            vestingOf[_beneficiary] = address(vesting);
+        }
+
+        require(this.transferFrom(_fromVault, vesting, _tokensAmount));
     }
 
     // Can't be `onlyAdmin` because it's called from within the constructor
@@ -193,7 +219,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         return tokenVault;
     }
 
-    function createVestableTokens() internal onlyAdmin {
+    function createAwardTokens() internal onlyAdmin {
         /// Team tokens - 30M URB
         urbitTeamTokensVault = createTokenVault(30000000);
 

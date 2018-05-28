@@ -13,20 +13,20 @@ const should = require('chai') // eslint-disable-line no-unused-vars
 contract('UrbitToken', (accounts) => {
   const creator = accounts[0];
   const admin = accounts[1];
-  const bonus = accounts[2];
   const sale = accounts[3];
-  const referral = accounts[4];
   const alice = accounts[5];
   const amount = 1000;
   let urbitToken;
 
   before(async () => {
-    urbitToken = await UrbitToken.new(admin, bonus, sale, referral);
+    urbitToken = await UrbitToken.new(admin, sale);
+    await urbitToken.createSaleTokens({ from: admin });
   });
 
   // sets up a token with prep for a two-year lock
   beforeEach(async () => {
-    this.token = await UrbitToken.new(admin, bonus, sale, referral);
+    this.token = await UrbitToken.new(admin, sale);
+    await this.token.createSaleTokens({ from: admin });
     this.start = latestTime() + duration.minutes(1); // +1 minute so it starts after contract instantiation
     this.duration = duration.years(2);
     await this.token.closeSale({ from: admin });
@@ -35,39 +35,29 @@ contract('UrbitToken', (accounts) => {
 
   context('bad initialization', () => {
     it('should not be allowed', async () => {
-      await expectThrow(UrbitToken.new(0, bonus, sale, referral));
-      await expectThrow(UrbitToken.new(admin, 0, sale, referral));
-      await expectThrow(UrbitToken.new(admin, bonus, 0, referral));
-      await expectThrow(UrbitToken.new(admin, bonus, sale, 0));
+      await expectThrow(UrbitToken.new(0, sale));
+      await expectThrow(UrbitToken.new(admin, 0));
     });
   });
 
   context('before sale closed', () => {
     it('should allow valid transfers', async () => {
-      // should allow bonus to transfer
-      let result = await urbitToken.transfer(admin, 10101, { from: bonus });
-      result.logs[0].event.should.be.eq('Transfer');
-
       // should allow sale transfer
-      result = await urbitToken.transfer(admin, 10101, { from: sale });
-      result.logs[0].event.should.be.eq('Transfer');
-
-      // should allow referral to transfer
-      result = await urbitToken.transfer(admin, 10101, { from: referral });
+      const result = await urbitToken.transfer(creator, 10101, { from: sale });
       result.logs[0].event.should.be.eq('Transfer');
     });
 
     it('should not allow invalid transfers', async () => {
       // should not allow transfer to null
-      await expectThrow(urbitToken.transfer(0, 10101, { from: bonus }));
+      await expectThrow(urbitToken.transfer(0, 10101, { from: sale }));
 
       // should not allow transfer by other
       let result = await urbitToken.transfer(admin, 10101, { from: creator });
       result.logs.length.should.eq(0);
 
       // should not allow transferFrom
-      await urbitToken.approve(sale, 10101, { from: bonus });
-      result = await urbitToken.transferFrom(bonus, sale, 10101, { from: sale });
+      await urbitToken.approve(sale, 10101, { from: creator });
+      result = await urbitToken.transferFrom(creator, sale, 10101, { from: sale });
       result.logs.length.should.eq(0);
     });
   });
@@ -78,7 +68,7 @@ contract('UrbitToken', (accounts) => {
       (await urbitToken.HARD_CAP()).should.be.bignumber.gt(await urbitToken.totalSupply());
 
       // should not allow non-admin to close sale
-      await expectThrow(urbitToken.closeSale({ from: bonus }));
+      await expectThrow(urbitToken.closeSale({ from: creator }));
 
       // should not burn tokens before the sale is closed
       await expectThrow(urbitToken.burnUnsoldTokens({ from: admin }));
@@ -96,7 +86,7 @@ contract('UrbitToken', (accounts) => {
 
   context('after the sale is closed', () => {
     it('should allow transferFrom', async () => {
-      const result = await urbitToken.transferFrom(bonus, sale, 10101, { from: sale });
+      const result = await urbitToken.transferFrom(creator, sale, 10101, { from: sale });
       result.logs[0].event.should.be.eq('Transfer');
     });
   });
@@ -107,6 +97,8 @@ contract('UrbitToken', (accounts) => {
     });
 
     it('should burn tokens', async () => {
+      const bonus = await urbitToken.bonusTokensVault();
+      const referral = await urbitToken.referralTokensVault();
       const bonusBalance = await urbitToken.balanceOf(bonus);
       const saleBalance = await urbitToken.balanceOf(sale);
       const referralBalance = await urbitToken.balanceOf(referral);
@@ -134,7 +126,7 @@ contract('UrbitToken', (accounts) => {
       await expectThrow(this.token.releasableBalanceOf(alice));
 
       // should fail to lock token that is not in a vault
-      await expectThrow(this.token.lockTokens(bonus, amount, alice, this.start, { from: admin }));
+      await expectThrow(this.token.lockTokens(sale, amount, alice, this.start, { from: admin }));
 
       // should not allow non-admins to lock tokens
       await expectThrow(this.token.lockTokens(this.teamTokensVault, amount, alice, this.start, { from: creator }));
