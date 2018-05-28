@@ -43,8 +43,14 @@ contract('UrbitToken', (accounts) => {
   context('before sale closed', () => {
     it('should allow valid transfers', async () => {
       // should allow sale transfer
-      const result = await urbitToken.transfer(creator, 10101, { from: sale });
+      let result = await urbitToken.transfer(creator, 10101, { from: sale });
       result.logs[0].event.should.be.eq('Transfer');
+
+      // should allow transferFrom
+      await urbitToken.transfer(admin, 10000, { from: sale });
+      await urbitToken.approve(sale, 1000, { from: admin });
+      result = await urbitToken.transferFrom(admin, creator, 100, { from: sale });
+      result.logs.length.should.eq(1);
     });
 
     it('should not allow invalid transfers', async () => {
@@ -55,9 +61,9 @@ contract('UrbitToken', (accounts) => {
       let result = await urbitToken.transfer(admin, 10101, { from: creator });
       result.logs.length.should.eq(0);
 
-      // should not allow transferFrom
+      // should not allow transferFrom by other
       await urbitToken.approve(sale, 10101, { from: creator });
-      result = await urbitToken.transferFrom(creator, sale, 10101, { from: sale });
+      result = await urbitToken.transferFrom(creator, sale, 10101, { from: creator });
       result.logs.length.should.eq(0);
     });
   });
@@ -67,6 +73,14 @@ contract('UrbitToken', (accounts) => {
       // should have a total supply below the hard cap
       (await urbitToken.HARD_CAP()).should.be.bignumber.gt(await urbitToken.totalSupply());
 
+      // should not allow non-admin, non-sale account to lock bonus/referral tokens
+      await expectThrow(urbitToken.lockBonusTokens(amount, alice, duration.days(12), { from: creator }));
+      await expectThrow(urbitToken.lockReferralTokens(amount, alice, duration.days(12), { from: creator }));
+
+      // should allow sale account to lock bonus/referral tokens
+      await urbitToken.lockBonusTokens(amount, alice, duration.days(12), { from: sale });
+      await urbitToken.lockReferralTokens(amount, alice, duration.days(12), { from: sale });
+
       // should not allow non-admin to close sale
       await expectThrow(urbitToken.closeSale({ from: creator }));
 
@@ -75,6 +89,10 @@ contract('UrbitToken', (accounts) => {
 
       // should close sale, create tokens
       await urbitToken.closeSale({ from: admin });
+
+      // should not allow bonus/referral tokens after close sale
+      await expectThrow(urbitToken.lockBonusTokens(amount, alice, duration.days(12), { from: admin }));
+      await expectThrow(urbitToken.lockReferralTokens(amount, alice, duration.days(12), { from: admin }));
 
       // should not have increased the total supply beyond the hard cap
       (await urbitToken.HARD_CAP()).should.be.bignumber.eq(await urbitToken.totalSupply());

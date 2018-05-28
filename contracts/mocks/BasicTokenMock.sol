@@ -24,4 +24,8 @@ contract BasicTokenMock is StandardToken {
     function fillUpAllowance() public {
         tv.fillUpAllowance();
     }
+
+    function approveSalesTransfer() public {
+        tv.approveSalesTransfer();
+    }
 }

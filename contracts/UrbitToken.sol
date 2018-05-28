@@ -64,7 +64,7 @@ contract UrbitToken is BurnableToken, StandardToken {
 
     /// Limiting functions to the admins of the token only
     modifier onlyAdmin {
-        require(msg.sender == urbitAdminAddress || msg.sender == address(this));
+        require(senderIsAdmin());
         _;
     }
 
@@ -88,9 +88,11 @@ contract UrbitToken is BurnableToken, StandardToken {
 
         /// Bonus tokens - 41,346,823 URB
         bonusTokensVault = createTokenVault(41346823);
+        bonusTokensVault.approveSalesTransfer();
 
         /// Referral tokens - 19,150,290 URB
         referralTokensVault = createTokenVault(19150290);
+        bonusTokensVault.approveSalesTransfer();
     }
 
     /// @dev Close the token sale
@@ -108,12 +110,14 @@ contract UrbitToken is BurnableToken, StandardToken {
         _burn(referralTokensVault, balances[referralTokensVault]);
     }
 
-    function lockBonusTokens(address _beneficiary, uint256 _tokensAmount, uint256 _duration) external beforeSaleClosed {
-        _presaleLock(bonusTokensVault, _beneficiary, _tokensAmount, _duration);
+    function lockBonusTokens(uint256 _tokensAmount, address _beneficiary, uint256 _duration) external beforeSaleClosed {
+        require(msg.sender == saleTokensAddress || senderIsAdmin());
+        _presaleLock(bonusTokensVault, _tokensAmount, _beneficiary, _duration);
     }
 
-    function lockReferralTokens(address _beneficiary, uint256 _tokensAmount, uint256 _duration) external beforeSaleClosed {
-        _presaleLock(referralTokensVault, _beneficiary, _tokensAmount, _duration);
+    function lockReferralTokens(uint256 _tokensAmount, address _beneficiary, uint256 _duration) external beforeSaleClosed {
+        require(msg.sender == saleTokensAddress || senderIsAdmin());
+        _presaleLock(referralTokensVault, _tokensAmount, _beneficiary, _duration);
     }
 
     /// @dev Shorter version of vest tokens (lock for a single whole period)
@@ -153,6 +157,11 @@ contract UrbitToken is BurnableToken, StandardToken {
         tv.release(ERC20Basic(address(this)));
     }
 
+    /// @dev returns whether the sender is admin (or the contract itself)
+    function senderIsAdmin() public view returns (bool) {
+        return (msg.sender == urbitAdminAddress || msg.sender == address(this));
+    }
+
     /// @dev The sale is closed when the saleClosedTimestamp is set.
     function saleClosed() public view returns (bool) {
         return (saleClosedTimestamp > 0);
@@ -173,27 +182,24 @@ contract UrbitToken is BurnableToken, StandardToken {
         return vestingOf[_owner];
     }
 
-    /// @dev Trading limited - requires the token sale to have closed
+    /// @dev Trading is limited before the sale is closed
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        if (saleClosed()) {
+        if (saleClosed() || msg.sender == saleTokensAddress || senderIsAdmin()) {
             return super.transferFrom(_from, _to, _value);
         }
         return false;
     }
 
-    /// @dev Trading is limited before sale is closed
+    /// @dev Trading is limited before the sale is closed
     function transfer(address _to, uint256 _value) public returns (bool) {
-        if (saleClosed() || msg.sender == saleTokensAddress) {
+        if (saleClosed() || msg.sender == saleTokensAddress || senderIsAdmin()) {
             return super.transfer(_to, _value);
         }
         return false;
     }
 
-    // Allow for vesting of the Bonus and Referral vaults before
-    // the sale is closed.
-    function _presaleLock(TokenVault _fromVault, address _beneficiary, uint256 _tokensAmount, uint256 _duration) internal {
-        require(!saleClosed());
-        require(msg.sender == saleTokensAddress || msg.sender == urbitAdminAddress || msg.sender == address(this));
+    /// @dev Grant tokens which begin vesting upon close of sale.
+    function _presaleLock(TokenVault _fromVault, uint256 _tokensAmount, address _beneficiary, uint256 _duration) internal {
         TokenVesting vesting = TokenVesting(vestingOf[_beneficiary]);
         if (vesting == address(0)) {
             vesting = new PresaleTokenVesting(_beneficiary, _duration);
@@ -212,6 +218,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         emit Transfer(0x0, destination, tokens);
     }
 
+    /// @dev Create a TokenVault and fill with the specified newly minted tokens
     function createTokenVault(uint32 count) internal onlyAdmin returns (TokenVault) {
         TokenVault tokenVault = new TokenVault(ERC20(this));
         createTokens(count, tokenVault);
@@ -219,6 +226,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         return tokenVault;
     }
 
+    /// @dev Creates the tokens awarded after the sale is closed
     function createAwardTokens() internal onlyAdmin {
         /// Team tokens - 30M URB
         urbitTeamTokensVault = createTokenVault(30000000);

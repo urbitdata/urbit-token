@@ -5,7 +5,7 @@ const UrbitToken = artifacts.require('../contracts/UrbitToken.sol');
 // const expectThrow = require('./helpers/expectThrow.js');
 const BigNumber = require('bignumber.js');
 const latestTime = require('./helpers/latest-time');
-const { increaseTimeTo, duration } = require('./helpers/increase-time');
+const { increaseTimeTo, duration } = require('./helpers/increase-time'); // eslint-disable-line no-unused-vars
 
 const should = require('chai') // eslint-disable-line no-unused-vars
   .use(require('chai-as-promised'))
@@ -155,7 +155,7 @@ contract('Urbit', (accounts) => {
     xit('should still be locked one month later', async () => {
       // TODO: advance time 30 days
       (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(presaleAmount);
-      (await urbitToken.lockedBalanceOf(barb)).toNumber().should.be.eq(presaleAmount*2);
+      (await urbitToken.lockedBalanceOf(barb)).toNumber().should.be.eq(presaleAmount * 2);
       (await urbitToken.lockedBalanceOf(carl)).toNumber().should.be.eq(presaleAmount);
     });
 
@@ -199,9 +199,9 @@ contract('Urbit', (accounts) => {
       // should start at zero
       (await urbitToken.balanceOf(doug)).toNumber().should.be.eq(0);
       (await urbitToken.lockedBalanceOf(doug)).toNumber().should.be.eq(0);
-      // TODO vestTokens for doug
-      const latest = latestTime();
-//    var result = await urbitToken.vestTokens(urbitTeamTokensVault, teamAmount, doug, latest + duration.minutes(1), latest + duration.hours(1), duration.days(365), false, { from: admin });
+      // vestTokens for doug
+      const result = await urbitToken.vestTokens(urbitTeamTokensVault, teamAmount, doug, latestTime() + duration.minutes(1), duration.days(90), duration.days(365), false, { from: admin }); // eslint-disable-line max-len
+      result.logs[0].event.should.be.eq('Transfer');
     });
     xit('should get the locked balance for an owner', async () => {
       //  (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.eq(0);

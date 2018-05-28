@@ -1,6 +1,7 @@
 pragma solidity ^0.4.21;
 
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import "./UrbitToken.sol";
 
 
 /**
@@ -19,12 +20,24 @@ contract TokenVault {
     }
 
     /**
-     * @notice increase the allowance to the full amount of tokens held
+     * @notice Allow the token itself to send tokens
+     * using transferFrom().
      */
     function fillUpAllowance() public {
         uint256 amount = token.balanceOf(this);
         require(amount > 0);
 
         token.approve(token, amount);
+    }
+
+    /**
+     * @notice Allow UrbitToken's sales account to
+     * transfer the balance using transferFrom().
+     */
+    function approveSalesTransfer() public {
+        uint256 amount = token.balanceOf(this);
+        require(amount > 0);
+        UrbitToken urbit = UrbitToken(token);
+        token.approve(urbit.saleTokensAddress(), amount);
     }
 }

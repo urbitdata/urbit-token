@@ -17,6 +17,7 @@ contract('TokenVault', (accounts) => {
       const tvMock = await BasicTokenMock.new(account1, 10000);
       await tvMock.createTokenVault(0);
       await expectThrow(tvMock.fillUpAllowance());
+      await expectThrow(tvMock.approveSalesTransfer());
     });
 
     it('should create a regular vault', async () => {
