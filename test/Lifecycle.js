@@ -20,7 +20,7 @@ contract('Urbit', (accounts) => {
   const barb = accounts[6]; // purchaser, bonus, referral recipient
   const carl = accounts[7]; // referral recipient
   const doug = accounts[8]; // team bonus recipient
-  // const earl = accounts[9];
+  const earl = accounts[9];
   var urbitToken; // eslint-disable-line no-var
 
   const presaleAmount = 1000;
@@ -205,15 +205,20 @@ contract('Urbit', (accounts) => {
       const result = await urbitToken.vestTokens(urbitTeamTokensVault, teamAmount, doug, latestTime() + duration.minutes(1), duration.days(90), duration.days(365), false, { from: admin }); // eslint-disable-line max-len
       result.logs[0].event.should.be.eq('Transfer');
     });
-    xit('should get the locked balance for an owner', async () => {
-      //  (await urbitToken.lockedBalanceOf(alice)).toNumber().should.be.eq(0);
+
+    it('should get the locked balance for an address', async () => {
+      (await urbitToken.lockedBalanceOf(alix)).toNumber().should.be.eq(0);
     });
-    xit('should fail to get the releasable balance for an owner who has no locks', async () => {
-      //  await expectThrow(urbitToken.releaseableBalanceOf(alice));
+
+    it('should fail to get the releasable balance for an address which has no locks', async () => {
+      await expectThrow(urbitToken.releasableBalanceOf(earl));
     });
-    xit('should not allow non-admins to lock tokens', async () => {
-      //  await expectThrow(urbitToken.lockTokens(bonus, 10101, sale, 11, { from: creator }));
+
+    it('should not allow non-admins to lock tokens', async () => {
+      await expectThrow(urbitToken.lockTokens(await urbitToken.urbitTeamTokensVault(), 10101, sale, 11, { from: creator }));
     });
+
+    // TODO: allow multiple vestings for a single address
     xit('should check to see if a token lock already exists for a given address', async () => {
       //  await expectThrow(urbitToken.lockTokens(bonus, 1, alice, 1, { from: admin }));
     });
