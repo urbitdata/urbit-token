@@ -166,7 +166,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         return (saleClosedTimestamp > 0);
     }
 
-    /// @dev check the locked balance of an address
+    /// @dev check the locked balance for an address
     function lockedBalanceOf(address _owner) public view returns (uint256) {
         uint256 result = 0;
         for (uint i = 0; i < vestingsOf[_owner].length; i++) {
@@ -175,7 +175,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         return result;
     }
 
-    /// @dev check the locked but releasable balance of an address
+    /// @dev check the locked but releasable balance for an address
     function releasableBalanceOf(address _owner) public view returns (uint256) {
         uint256 result = 0;
         for (uint i = 0; i < vestingsOf[_owner].length; i++) {
@@ -189,7 +189,7 @@ contract UrbitToken is BurnableToken, StandardToken {
         return vestingsOf[_owner].length;
     }
 
-    /// @dev get the specified TokenVesting contract address for an owner
+    /// @dev get the specified TokenVesting contract address for an address
     function vestingOf(address _owner, uint _index) public view returns (address) {
         return vestingsOf[_owner][_index];
     }
