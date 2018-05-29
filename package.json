@@ -12,6 +12,7 @@
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.12.0",
+    "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.4.15",
     "solium": "^1.1.7",
     "truffle": "^4.1.11"
@@ -19,6 +20,7 @@
   "license": "MIT",
   "scripts": {
     "build": "./node_modules/.bin/truffle compile",
+    "build-contracts": "mkdir -p ./build/merged ; ./node_modules/.bin/sol-merger './contracts/*.sol' ./build/merged",
     "coverage": "./node_modules/.bin/solidity-coverage",
     "lint": "./node_modules/.bin/eslint .",
     "solium": "./node_modules/.bin/solium --dir contracts/",
