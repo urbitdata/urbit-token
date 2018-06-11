@@ -88,11 +88,9 @@ contract UrbitToken is BurnableToken, StandardToken {
 
         /// Bonus tokens - 41,346,823 URB
         bonusTokensVault = createTokenVault(41346823);
-        bonusTokensVault.approveSalesTransfer();
 
         /// Referral tokens - 19,150,290 URB
         referralTokensVault = createTokenVault(19150290);
-        bonusTokensVault.approveSalesTransfer();
     }
 
     /// @dev Close the token sale
