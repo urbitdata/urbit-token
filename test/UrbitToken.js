@@ -34,9 +34,13 @@ contract('UrbitToken', (accounts) => {
   });
 
   context('bad initialization', () => {
-    it('should not be allowed', async () => {
+    it('should not be accept incorrect constructor arguments', async () => {
       await expectThrow(UrbitToken.new(0, sale));
       await expectThrow(UrbitToken.new(admin, 0));
+    });
+
+    it('should not allow createSaleTokens to be called twice', async () => {
+      await expectThrow(urbitToken.createSaleTokens({ from: admin }));
     });
   });
 
