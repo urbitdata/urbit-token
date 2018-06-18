@@ -13,6 +13,7 @@ const should = require('chai') // eslint-disable-line no-unused-vars
 contract('UrbitToken', (accounts) => {
   const creator = accounts[0];
   const admin = accounts[1];
+  const newAdmin = accounts[2];
   const sale = accounts[3];
   const alice = accounts[5];
   const amount = 1000;
@@ -197,6 +198,28 @@ contract('UrbitToken', (accounts) => {
       // Alice can send
       const result = await this.token.transfer(admin, amount, { from: alice });
       result.logs[0].event.should.be.eq('Transfer');
+    });
+  });
+
+  context('change admin', () => {
+    it('should not allow non-admin to change admin', async () => {
+      await expectThrow(urbitToken.changeAdmin(newAdmin, { from: creator }));
+    });
+
+    it('should not allow an invalid address', async () => {
+      await expectThrow(urbitToken.changeAdmin(0, { from: admin }));
+    });
+
+    it('should allow admin to change admin', async () => {
+      await urbitToken.changeAdmin(newAdmin, { from: admin });
+    });
+
+    it('should not allow ex-admin to change admin', async () => {
+      await expectThrow(urbitToken.changeAdmin(creator, { from: admin }));
+    });
+
+    it('should allow new admin to change admin again', async () => {
+      await urbitToken.changeAdmin(admin, { from: newAdmin });
     });
   });
 });

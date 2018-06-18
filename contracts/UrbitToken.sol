@@ -79,6 +79,12 @@ contract UrbitToken is BurnableToken, StandardToken {
         saleTokensAddress = _saleTokensAddress;
     }
 
+    /// @dev allows the admin to assign a new admin
+    function changeAdmin(address _newUrbitAdminAddress) external onlyAdmin {
+        require(_newUrbitAdminAddress != address(0));
+        urbitAdminAddress = _newUrbitAdminAddress;
+    }
+
     /// @dev creates the tokens needed for sale
     function createSaleTokens() external onlyAdmin beforeSaleClosed {
 
