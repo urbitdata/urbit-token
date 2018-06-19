@@ -29,15 +29,4 @@ contract TokenVault {
 
         token.approve(token, amount);
     }
-
-    /**
-     * @notice Allow UrbitToken's sales account to
-     * transfer the balance using transferFrom().
-     */
-    function approveSalesTransfer() public {
-        uint256 amount = token.balanceOf(this);
-        require(amount > 0);
-        UrbitToken urbit = UrbitToken(token);
-        token.approve(urbit.saleTokensAddress(), amount);
-    }
 }

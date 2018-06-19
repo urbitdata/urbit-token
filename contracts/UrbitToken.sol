@@ -87,6 +87,8 @@ contract UrbitToken is BurnableToken, StandardToken {
 
     /// @dev creates the tokens needed for sale
     function createSaleTokens() external onlyAdmin beforeSaleClosed {
+        require(bonusTokensVault == address(0));
+        require(referralTokensVault == address(0));
 
         /// Maximum tokens to be allocated on the sale
         /// 191,502,887 URB
@@ -94,11 +96,9 @@ contract UrbitToken is BurnableToken, StandardToken {
 
         /// Bonus tokens - 41,346,823 URB
         bonusTokensVault = createTokenVault(41346823);
-        bonusTokensVault.approveSalesTransfer();
 
         /// Referral tokens - 19,150,290 URB
         referralTokensVault = createTokenVault(19150290);
-        bonusTokensVault.approveSalesTransfer();
     }
 
     /// @dev Close the token sale
@@ -224,9 +224,8 @@ contract UrbitToken is BurnableToken, StandardToken {
         require(this.transferFrom(_fromVault, vesting, _tokensAmount));
     }
 
-    // Can't be `onlyAdmin` because it's called from within the constructor
-    // (when `this` is not yet available); `internal` is sufficient.
-    function createTokens(uint32 count, address destination) internal {
+    // @dev create specified number of toekns and transfer to destination
+    function createTokens(uint32 count, address destination) internal onlyAdmin {
         uint256 tokens = count * MAGNITUDE;
         totalSupply_ = totalSupply_.add(tokens);
         balances[destination] = tokens;
