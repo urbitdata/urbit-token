@@ -20,7 +20,7 @@ For more information:
 
 # UrbitToken
 
-UrbitToken is an ERC20 compliant Token for the Ethereum Blockchain and its smart contract make extensive 
+UrbitToken is an ERC20 compliant Token for the Ethereum Blockchain. Its smart contract make extensive 
 use of the OpenZeppelin libraries. 
 
 This smart contract will be use for the Pre-Sale, Public Sale and the project development. 
