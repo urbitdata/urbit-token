@@ -7,6 +7,6 @@ module.exports = {
         "web3": false
     },
     "rules": {
-        "max-len": ["error", { "code": 150 }]
+        "max-len": ["error", { "code": 155 }]
     }
 };
