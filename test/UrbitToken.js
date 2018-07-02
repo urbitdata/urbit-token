@@ -78,12 +78,14 @@ contract('UrbitToken', (accounts) => {
       // should have a total supply below the hard cap
       (await urbitToken.HARD_CAP()).should.be.bignumber.gt(await urbitToken.totalSupply());
 
-      // should not allow non-admin, non-sale account to lock bonus/referral tokens
+      // should not allow non-admin, non-sale account to lock bonus/bounty/referral tokens
       await expectThrow(urbitToken.lockBonusTokens(amount, alice, duration.days(12), { from: creator }));
+      await expectThrow(urbitToken.lockBountyTokens(amount, alice, duration.days(12), { from: creator }));
       await expectThrow(urbitToken.lockReferralTokens(amount, alice, duration.days(12), { from: creator }));
 
-      // should allow sale account to lock bonus/referral tokens
+      // should allow sale account to lock bonus/bounty/referral tokens
       await urbitToken.lockBonusTokens(amount, alice, duration.days(12), { from: sale });
+      await urbitToken.lockBountyTokens(amount, alice, duration.days(12), { from: sale });
       await urbitToken.lockReferralTokens(amount, alice, duration.days(12), { from: sale });
 
       // should not allow non-admin to close sale
@@ -95,8 +97,9 @@ contract('UrbitToken', (accounts) => {
       // should close sale, create tokens
       await urbitToken.closeSale({ from: admin });
 
-      // should not allow bonus/referral tokens after close sale
+      // should not allow bonus/bounty/referral tokens after close sale
       await expectThrow(urbitToken.lockBonusTokens(amount, alice, duration.days(12), { from: admin }));
+      await expectThrow(urbitToken.lockBountyTokens(amount, alice, duration.days(12), { from: admin }));
       await expectThrow(urbitToken.lockReferralTokens(amount, alice, duration.days(12), { from: admin }));
 
       // should not have increased the total supply beyond the hard cap
@@ -121,8 +124,10 @@ contract('UrbitToken', (accounts) => {
 
     it('should burn tokens', async () => {
       const bonus = await urbitToken.bonusTokensVault();
+      const bounty = await urbitToken.bountyTokensVault();
       const referral = await urbitToken.referralTokensVault();
       const bonusBalance = await urbitToken.balanceOf(bonus);
+      const bountyBalance = await urbitToken.balanceOf(bounty);
       const saleBalance = await urbitToken.balanceOf(sale);
       const referralBalance = await urbitToken.balanceOf(referral);
       const totalSupply = await urbitToken.totalSupply();
@@ -133,10 +138,13 @@ contract('UrbitToken', (accounts) => {
       result.logs[3].event.should.be.eq('Transfer');
       result.logs[4].event.should.be.eq('Burn');
       result.logs[5].event.should.be.eq('Transfer');
+      result.logs[6].event.should.be.eq('Burn');
+      result.logs[7].event.should.be.eq('Transfer');
       (await urbitToken.balanceOf(bonus)).toNumber().should.be.eq(0);
+      (await urbitToken.balanceOf(bounty)).toNumber().should.be.eq(0);
       (await urbitToken.balanceOf(sale)).toNumber().should.be.eq(0);
       (await urbitToken.balanceOf(referral)).toNumber().should.be.eq(0);
-      totalSupply.should.be.bignumber.eq((await urbitToken.totalSupply()).plus(bonusBalance.plus(saleBalance.plus(referralBalance))));
+      totalSupply.should.be.bignumber.eq((await urbitToken.totalSupply()).plus(bonusBalance.plus(bountyBalance.plus(saleBalance.plus(referralBalance)))));
     });
   });
 
