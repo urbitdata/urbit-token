@@ -33,7 +33,7 @@ contract('PresaleTokenVesting', ([admin, sale, beneficiary]) => {
   });
 
   it('should lock some balance equal to the hardcoded amount', async () => {
-    let balanceOfVault = await this.token.balanceOf(bountyTokensVault);
+    const balanceOfVault = await this.token.balanceOf(bountyTokensVault);
     balanceOfVault.should.bignumber.equal(bountyTokensVaultAmount);
   });
 
