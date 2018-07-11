@@ -504,14 +504,8 @@ contract UrbitToken is BurnableToken, StandardToken {
     /// This address is used to keep the tokens for sale
     address public saleTokensAddress;
 
-    /// This vault is used to keep the bonus tokens
-    TokenVault public bonusTokensVault;
-
     /// This vault is used to keep the bounty and marketing tokens
     TokenVault public bountyTokensVault;
-
-    /// This vault is used to keep the referral tokens
-    TokenVault public referralTokensVault;
 
     /// This vault is used to keep the team and founders tokens
     TokenVault public urbitTeamTokensVault;
@@ -562,22 +556,14 @@ contract UrbitToken is BurnableToken, StandardToken {
 
     /// @dev creates the tokens needed for sale
     function createSaleTokens() external onlyAdmin beforeSaleClosed {
-        require(bonusTokensVault == address(0));
         require(bountyTokensVault == address(0));
-        require(referralTokensVault == address(0));
 
         /// Maximum tokens to be allocated on the sale
-        /// 191,502,887 URB
-        createTokens(191502887, saleTokensAddress);
-
-        /// Bonus tokens - 41,346,823 URB
-        bonusTokensVault = createTokenVault(41346823);
+        /// 252,000,000 URB
+        createTokens(252000000, saleTokensAddress);
 
         /// Bounty tokens - 24M URB
         bountyTokensVault = createTokenVault(24000000);
-
-        /// Referral tokens - 19,150,290 URB
-        referralTokensVault = createTokenVault(19150290);
     }
 
     /// @dev Close the token sale
@@ -591,24 +577,12 @@ contract UrbitToken is BurnableToken, StandardToken {
     function burnUnsoldTokens() external onlyAdmin {
         require(saleClosed());
         _burn(saleTokensAddress, balances[saleTokensAddress]);
-        _burn(bonusTokensVault, balances[bonusTokensVault]);
         _burn(bountyTokensVault, balances[bountyTokensVault]);
-        _burn(referralTokensVault, balances[referralTokensVault]);
-    }
-
-    function lockBonusTokens(uint256 _tokensAmount, address _beneficiary, uint256 _duration) external beforeSaleClosed {
-        require(msg.sender == saleTokensAddress || senderIsAdmin());
-        _presaleLock(bonusTokensVault, _tokensAmount, _beneficiary, _duration);
     }
 
     function lockBountyTokens(uint256 _tokensAmount, address _beneficiary, uint256 _duration) external beforeSaleClosed {
         require(msg.sender == saleTokensAddress || senderIsAdmin());
         _presaleLock(bountyTokensVault, _tokensAmount, _beneficiary, _duration);
-    }
-
-    function lockReferralTokens(uint256 _tokensAmount, address _beneficiary, uint256 _duration) external beforeSaleClosed {
-        require(msg.sender == saleTokensAddress || senderIsAdmin());
-        _presaleLock(referralTokensVault, _tokensAmount, _beneficiary, _duration);
     }
 
     /// @dev Shorter version of vest tokens (lock for a single whole period)
