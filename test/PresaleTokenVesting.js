@@ -15,10 +15,8 @@ const TokenVesting = artifacts.require('TokenVesting');
 
 contract('PresaleTokenVesting', ([admin, sale, beneficiary]) => {
   let MAGNITUDE;
-  let bonusTokensVault;
-  let bonusTokensVaultAmount;
-  let referralTokensVault;
-  let referralTokensVaultAmount;
+  let bountyTokensVault;
+  let bountyTokensVaultAmount;
   const ZERO = new BigNumber(0);
   const vestedAmount = new BigNumber(1000);
 
@@ -30,35 +28,30 @@ contract('PresaleTokenVesting', ([admin, sale, beneficiary]) => {
 
     // hardcoded in the contract
     MAGNITUDE = await this.token.MAGNITUDE();
-    bonusTokensVault = await this.token.bonusTokensVault();
-    bonusTokensVaultAmount = MAGNITUDE.mul(new BigNumber(41346823));
-    referralTokensVault = await this.token.referralTokensVault();
-    referralTokensVaultAmount = MAGNITUDE.mul(new BigNumber(19150290));
+    bountyTokensVault = await this.token.bountyTokensVault();
+    bountyTokensVaultAmount = MAGNITUDE.mul(new BigNumber(24000000));
   });
 
   it('should lock some balance equal to the hardcoded amount', async () => {
-    let balanceOfVault = await this.token.balanceOf(bonusTokensVault);
-    balanceOfVault.should.bignumber.equal(bonusTokensVaultAmount);
-    balanceOfVault = await this.token.balanceOf(referralTokensVault);
-    balanceOfVault.should.bignumber.equal(referralTokensVaultAmount);
+    const balanceOfVault = await this.token.balanceOf(bountyTokensVault);
+    balanceOfVault.should.bignumber.equal(bountyTokensVaultAmount);
   });
 
   it('should keep balance locked before closeSale', async () => {
-    await this.token.lockBonusTokens(vestedAmount, beneficiary, duration.days(90));
+    await this.token.lockBountyTokens(vestedAmount, beneficiary, duration.days(90));
     (await this.token.lockedBalanceOf(beneficiary)).should.bignumber.equal(vestedAmount);
     (await this.token.releasableBalanceOf(beneficiary)).should.bignumber.equal(ZERO);
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(ZERO);
   });
 
-  it('should not allow locking bonus tokens or referral tokens after closeSale', async () => {
+  it('should not allow locking bounty tokens after closeSale', async () => {
     await this.token.closeSale();
-    await expectThrow(this.token.lockBonusTokens(vestedAmount, beneficiary, duration.days(90)));
-    await expectThrow(this.token.lockReferralTokens(vestedAmount, beneficiary, duration.days(90)));
+    await expectThrow(this.token.lockBountyTokens(vestedAmount, beneficiary, duration.days(90)));
   });
 
 
   it('should have released all after end', async () => {
-    await this.token.lockBonusTokens(vestedAmount, beneficiary, duration.days(90));
+    await this.token.lockBountyTokens(vestedAmount, beneficiary, duration.days(90));
     await this.token.closeSale();
     await increaseTimeTo((await this.token.saleClosedTimestamp()).plus(duration.days(45)));
     (await this.token.balanceOf(beneficiary)).should.bignumber.equal(ZERO);
@@ -72,7 +65,6 @@ contract('PresaleTokenVesting', ([admin, sale, beneficiary]) => {
   });
 
   it('should handle multiple grants to the same beneficiary', async () => {
-    await this.token.lockBonusTokens(vestedAmount, beneficiary, this.start);
-    await this.token.lockReferralTokens(vestedAmount, beneficiary, this.start);
+    await this.token.lockBountyTokens(vestedAmount, beneficiary, this.start);
   });
 });
