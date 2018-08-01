@@ -20,6 +20,7 @@ contract('Urbit', (accounts) => {
   const barb = accounts[6]; // purchaser, bounty recipient
   const doug = accounts[8]; // bounty recipient
   const earl = accounts[9]; // team bonus recipient
+  const fred = accounts[2];
   var urbitToken; // eslint-disable-line no-var
 
   const presaleAmount = 1000;
@@ -196,6 +197,20 @@ contract('Urbit', (accounts) => {
 
     it('should not allow non-admins to lock tokens', async () => {
       await expectThrow(urbitToken.lockTokens(await urbitToken.urbitTeamTokensVault(), 10101, sale, 11, { from: creator }));
+    });
+
+    it('should allow multiple vestings and liberations per recipient', async () => {
+      // lock and release
+      var vault = await urbitToken.advisorsTokensVault();
+      await urbitToken.lockTokens(vault, 10000000000000, fred, 0, { from: admin });
+      await urbitToken.releaseVestedTokensFor(fred, { from: admin });
+
+      // multiple locks and release
+      vault = await urbitToken.rewardsTokensVault();
+      await urbitToken.lockTokens(vault, 10000000000000, fred, 0, { from: admin });
+      vault = await urbitToken.advisorsTokensVault();
+      await urbitToken.lockTokens(vault, 10000000000000, fred, 0, { from: admin });
+      await urbitToken.releaseVestedTokens({ from: fred });
     });
   });
 
