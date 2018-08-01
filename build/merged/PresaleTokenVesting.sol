@@ -587,9 +587,12 @@ contract UrbitToken is BurnableToken, StandardToken {
     /// @dev releases vested tokens for the specified address.
     /// Can be called by any account for any address.
     function releaseVestedTokensFor(address _owner) external {
+        ERC20Basic token = ERC20Basic(address(this));
         for (uint i = 0; i < vestingsOf[_owner].length; i++) {
             TokenVesting tv = TokenVesting(vestingsOf[_owner][i]);
-            tv.release(ERC20Basic(address(this)));
+            if (tv.releasableAmount(token) > 0) {
+                tv.release(token);
+            }
         }
     }
 
