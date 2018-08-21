@@ -30,6 +30,7 @@ module.exports = {
       port: 8545,
       gas: 4612388,
       network_id: '1',
+      from: '0x3477098FDe46719A5581CdB6DFE4759E624d061a',
     },
     rinkeby: {
       host: 'localhost',
